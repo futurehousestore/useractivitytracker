@@ -20,7 +20,7 @@ class modUserActivityTracker extends DolibarrModules
         $this->family       = 'technic';
         $this->name         = preg_replace('/^mod/i', '', get_class($this));
         $this->description  = 'Track and analyse user activity across Dolibarr';
-        $this->version      = '2.5.0';
+        $this->version      = '2.5.1';
         $this->const_name   = 'MAIN_MODULE_' . strtoupper($this->rights_class);
         $this->special      = 0;
         $this->picto        = 'title.svg@useractivitytracker';
