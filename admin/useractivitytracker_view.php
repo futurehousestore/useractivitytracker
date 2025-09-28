@@ -2,7 +2,7 @@
 /**
  * Activity Details Viewer
  * Path: custom/useractivitytracker/admin/useractivitytracker_view.php
- * Version: 2.4.0 — dynamic main.inc.php resolver, bug fixes
+ * Version: 2.5.0 — enable triggers by default, fix user tracking
  */
 
 /* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */

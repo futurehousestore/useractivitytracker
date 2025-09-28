@@ -2,7 +2,7 @@
 /**
  * Activity Analysis page
  * Path: custom/useractivitytracker/admin/useractivitytracker_analysis.php
- * Version: 2.4.0 — dynamic main.inc.php resolver, bug fixes
+ * Version: 2.5.0 — enable triggers by default, fix user tracking
  */
 
 /* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */
@@ -232,6 +232,13 @@ if ($stats['total'] == 0) {
                 $diagnostic_results[] = '❌ Triggers may not be enabled in Dolibarr configuration';
             } else {
                 $diagnostic_results[] = '✅ Triggers are enabled in Dolibarr';
+            }
+            
+            // Check if user tracking is enabled
+            if (!getDolGlobalInt('USERACTIVITYTRACKER_ENABLE_TRACKING', 1)) {
+                $diagnostic_results[] = '❌ User tracking is disabled - check Settings to enable it';
+            } else {
+                $diagnostic_results[] = '✅ User tracking is enabled';
             }
             
             // Check if module is active
