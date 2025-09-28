@@ -1,13 +1,13 @@
 # User Activity Tracker (Dolibarr Module)
 
-**Version:** 1.0.0
+**Version:** 2.0.0
 **Compatibility:** Dolibarr 14.0+ to 22.0.0+, PHP 7.4+
 **Namespace/Dir:** `custom/useractivitytracker`
 
 Track user activity across Dolibarr with a comprehensive dashboard, advanced analytics, CSV/XLS export, webhook alerts, anomaly detection, and retention cleanup.
 
-## ✨ New in v1.0.0
-- **🎨 Modern Dashboard UI**: Complete dashboard redesign with responsive cards, dark mode, and professional styling
+## ✨ New in v2.0.0
+- **🎨 Enhanced Modern UI**: Professional icons throughout all admin pages for improved visual appeal
 - **📊 Interactive Charts**: Chart.js integration with doughnut, bar, and line charts for comprehensive data visualization
 - **🔄 Real-Time Updates**: AJAX-powered live data refresh with configurable auto-refresh intervals
 - **🌙 Dark Mode**: Full theme support with localStorage persistence and smooth transitions
@@ -18,6 +18,11 @@ Track user activity across Dolibarr with a comprehensive dashboard, advanced ana
 - **⚙️ Dashboard Settings**: Customizable preferences for appearance, behavior, and data display
 - **🔍 Enhanced Filters**: Advanced search panel with element type, severity, and IP filtering
 - **📤 Modern Export**: Improved CSV/XLS export with better styling and PDF export foundation
+- **🔐 Comprehensive Login/Logout Tracking**: Enhanced hooks system for complete user session monitoring
+- **🎯 Cross-Platform Activity Tracking**: Extended tracking capabilities across all Dolibarr modules and pages
+- **🏗️ Hooks Architecture**: New hooks system supplements triggers for comprehensive activity capture
+- **🎭 Professional Icons**: Font Awesome icons integrated throughout for intuitive navigation
+- **📱 Enhanced Responsive Design**: Improved mobile experience with touch-optimized controls
 - **Dolibarr 22.0.0 Compatibility**: Full compatibility with Dolibarr 22.0.0 and modern PHP versions
 - **Updated APIs**: Replaced deprecated `$conf->global` with modern `getDolGlobalString()` functions
 - **Improved Installation**: Better table creation process with proper SQL file handling
@@ -30,13 +35,18 @@ Track user activity across Dolibarr with a comprehensive dashboard, advanced ana
 - **Security Enhancements**: Sensitive data filtering and improved IP detection
 
 ## Features
-- Logs all Dolibarr triggers via a single trigger class (action name, element type, IDs, user, company, IP, and payload snapshot).
-- Dashboard: Activity by Type, by User, and Timeline (daily buckets).
-- CSV / XLS export with date filters.
+- **Comprehensive Activity Tracking**: Captures all Dolibarr triggers plus enhanced hook-based tracking for login/logout events and page navigation
+- **Modern Dashboard Interface**: Professional dashboard with charts, statistics, and real-time updates
+- **Advanced Export Options**: CSV/XLS export with comprehensive filtering and date ranges
 - Webhook push (optional) with built‑in “Test Webhook” button.
-- Retention auto‑cleanup (runs opportunistically on each dashboard/settings visit).
-- Permissions: read/export/admin, assignable to groups.
-- Multi‑entity compatible (stores `entity` column).
+- **Smart Retention Management**: Automatic cleanup based on configurable retention periods
+- **Flexible Permissions**: Read/export/admin permissions assignable to users and groups
+- **Multi-Entity Support**: Full compatibility with Dolibarr's multi-entity architecture
+- **Enhanced Login/Logout Tracking**: Dedicated hooks for complete session monitoring including failed login attempts
+- **Cross-Platform Monitoring**: Tracks user activities across all Dolibarr modules and pages
+- **Professional UI with Icons**: Intuitive Font Awesome icons throughout all admin interfaces
+- **Responsive Design**: Mobile-optimized interface with touch-friendly controls
+- **Security Features**: Anomaly detection, sensitive data filtering, and enhanced IP tracking
 
 ## Installation
 1. Copy this folder to `htdocs/custom/useractivitytracker` (or `custom/useractivitytracker` in your setup)

@@ -1,6 +1,6 @@
 /**
  * Modern Dashboard JavaScript for User Activity Tracker
- * Version: 1.0.0
+ * Version: 2.0.0
  * Features: Dark mode, AJAX refresh, charts, pagination, and more
  */
 

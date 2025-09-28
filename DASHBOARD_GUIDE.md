@@ -232,7 +232,7 @@ Planned features for future versions:
 
 ## 📝 Changelog
 
-### Version 1.0.0
+### Version 2.0.0
 - Initial modern dashboard implementation
 - Chart.js integration
 - Dark mode support

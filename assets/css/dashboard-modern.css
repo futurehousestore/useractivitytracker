@@ -1,6 +1,6 @@
 /**
  * Modern Dashboard Styles for User Activity Tracker
- * Version: 1.0.0
+ * Version: 2.0.0
  * Bootstrap-compatible responsive design with dark mode support
  */
 
@@ -657,4 +657,100 @@
     margin: 0;
     border-radius: 0;
   }
+}
+
+/* Enhanced Icon Styling */
+.fa, .fas, .far, .fab {
+  margin-right: 0.5rem;
+}
+
+/* Table Icons */
+.liste_titre i {
+  color: var(--primary-color);
+}
+
+/* Setup Page Enhancements */
+.titlefield i {
+  color: var(--primary-color);
+  min-width: 20px;
+}
+
+/* Button Icon Spacing */
+.button i {
+  margin-left: 0.5rem;
+}
+
+/* Status Icons */
+.status-success i {
+  color: var(--success-color);
+}
+
+.status-error i {
+  color: var(--danger-color);
+}
+
+.status-warning i {
+  color: var(--warning-color);
+}
+
+/* Enhanced Card Headers with Icons */
+.card-header i {
+  margin-right: 0.75rem;
+  font-size: 1.1em;
+  opacity: 0.9;
+}
+
+/* Responsive Icon Adjustments */
+@media (max-width: 768px) {
+  .fa, .fas, .far, .fab {
+    margin-right: 0.25rem;
+  }
+  
+  .titlefield i {
+    margin-right: 0.25rem;
+  }
+  
+  .card-header i {
+    margin-right: 0.5rem;
+  }
+}
+
+/* Professional Hover Effects */
+.btn:hover i {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+/* Loading States */
+.loading i {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Enhanced Form Controls */
+.form-control:focus + .form-icon,
+.flat:focus + i {
+  color: var(--primary-color);
+  transform: scale(1.1);
+  transition: all 0.2s ease;
+}
+
+/* Enhanced Version Display */
+.version-badge {
+  display: inline-flex;
+  align-items: center;
+  background: var(--primary-color);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.version-badge i {
+  margin-right: 0.5rem;
 }
