@@ -1,6 +1,6 @@
 
 -- Install DDL for alt_user_activity (prefix aware via module init)
--- Version: 2025-09-27.beta-1
+-- Version: 1.0.0
 CREATE TABLE llx_alt_user_activity (
   rowid INTEGER AUTO_INCREMENT PRIMARY KEY,
   tms TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
