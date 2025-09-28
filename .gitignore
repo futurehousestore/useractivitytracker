@@ -1,0 +1,15 @@
+# Test files (not for production)
+test_config.php
+/tmp/
+*.tmp
+*.log
+
+# IDE files  
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
