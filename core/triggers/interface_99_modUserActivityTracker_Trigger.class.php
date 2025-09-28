@@ -28,7 +28,7 @@ class InterfaceUserActivityTrackerTrigger
         if (! empty($object) && is_object($object) && isset($object->element) && $object->element === 'alt_user_activity') return 0;
         
         // Skip if user tracking is disabled for this user
-        if (!empty($user->conf->USERACTIVITYTRACKER_SKIP_USER)) return 0;
+        if (getDolGlobalString('USERACTIVITYTRACKER_SKIP_USER_'.$user->id)) return 0;
 
         try {
             $now = dol_now();
@@ -103,8 +103,8 @@ class InterfaceUserActivityTrackerTrigger
             }
 
             // Send webhook if configured
-            if (!empty($conf->global->USERACTIVITYTRACKER_WEBHOOK_URL)) {
-                $this->pushWebhook($conf->global->USERACTIVITYTRACKER_WEBHOOK_URL, array(
+            if (getDolGlobalString('USERACTIVITYTRACKER_WEBHOOK_URL')) {
+                $this->pushWebhook(getDolGlobalString('USERACTIVITYTRACKER_WEBHOOK_URL'), array(
                     'action' => $action,
                     'element_type' => $element,
                     'object_id' => $objid,
@@ -116,7 +116,7 @@ class InterfaceUserActivityTrackerTrigger
                     'datestamp' => dol_print_date($now,'standard'),
                     'severity' => $severity,
                     'session_id' => session_id()
-                ), $conf->global->USERACTIVITYTRACKER_WEBHOOK_SECRET ?? '');
+                ), getDolGlobalString('USERACTIVITYTRACKER_WEBHOOK_SECRET'));
             }
 
             return 1;

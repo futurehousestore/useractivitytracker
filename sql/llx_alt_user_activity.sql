@@ -1,7 +1,7 @@
 
 -- Install DDL for alt_user_activity (prefix aware via module init)
 -- Version: 1.0.0
-CREATE TABLE llx_alt_user_activity (
+CREATE TABLE IF NOT EXISTS llx_alt_user_activity (
   rowid INTEGER AUTO_INCREMENT PRIMARY KEY,
   tms TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   datestamp DATETIME NULL,
@@ -23,4 +23,4 @@ CREATE TABLE llx_alt_user_activity (
   INDEX idx_user (userid),
   INDEX idx_datestamp (datestamp),
   INDEX idx_entity (entity)
-) ENGINE=innodb;
+) ENGINE=InnoDB;

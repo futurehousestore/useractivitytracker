@@ -65,7 +65,7 @@ $res = $db->query($sql);
 if ($res) while ($o=$db->fetch_object($res)) $recentActivities[]=$o;
 
 // Opportunistic retention cleanup
-$days = (int)($conf->global->USERACTIVITYTRACKER_RETENTION_DAYS ?: 365);
+$days = getDolGlobalInt('USERACTIVITYTRACKER_RETENTION_DAYS', 365);
 $db->query("DELETE FROM ".$db->prefix()."alt_user_activity WHERE datestamp < DATE_SUB(NOW(), INTERVAL ".((int)$days)." DAY) AND entity=".(int)$conf->entity);
 
 llxHeader('', 'User Activity — Dashboard');
