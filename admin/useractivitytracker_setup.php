@@ -2,7 +2,7 @@
 /**
  * Setup page
  * Path: custom/useractivitytracker/admin/useractivitytracker_setup.php
- * Version: 2.4.0 — dynamic main.inc.php resolver, bug fixes
+ * Version: 2.5.0 — enable triggers by default, fix user tracking
  */
 
 /* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */
@@ -47,6 +47,7 @@ if ($action === 'save') {
     dolibarr_set_const($db, 'USERACTIVITYTRACKER_WEBHOOK_URL',    trim(GETPOST('webhook','alphanohtml')), 'chaine', 0, '', $conf->entity);
     dolibarr_set_const($db, 'USERACTIVITYTRACKER_WEBHOOK_SECRET', trim(GETPOST('secret','alphanohtml')),   'chaine', 0, '', $conf->entity);
     dolibarr_set_const($db, 'USERACTIVITYTRACKER_ENABLE_ANOMALY', GETPOSTISSET('anomaly') ? '1' : '0',     'chaine', 0, '', $conf->entity);
+    dolibarr_set_const($db, 'USERACTIVITYTRACKER_ENABLE_TRACKING', GETPOSTISSET('enable_tracking')?'1':'0', 'chaine', 0, '', $conf->entity);
     dolibarr_set_const($db, 'USERACTIVITYTRACKER_ENABLE_SESSION_TRACKING', GETPOSTISSET('session_tracking')?'1':'0', 'chaine', 0, '', $conf->entity);
     dolibarr_set_const($db, 'USERACTIVITYTRACKER_SKIP_SENSITIVE_DATA',     GETPOSTISSET('skip_sensitive')?'1':'0',    'chaine', 0, '', $conf->entity);
     dolibarr_set_const($db, 'USERACTIVITYTRACKER_MAX_PAYLOAD_SIZE', max(1024,(int)GETPOST('max_payload_size','int')), 'chaine', 0, '', $conf->entity);
@@ -59,7 +60,7 @@ elseif ($action === 'testwebhook' && getDolGlobalString('USERACTIVITYTRACKER_WEB
         'message' => 'Test webhook from User Activity Tracker',
         'date'    => dol_print_date(dol_now(),'standard'),
         'entity'  => $conf->entity,
-        'version' => '2.4.0'
+        'version' => '2.5.0'
     ), JSON_UNESCAPED_SLASHES);
 
     if (function_exists('curl_init')) {
@@ -134,6 +135,7 @@ print '<input type="hidden" name="action" value="save">';
 print '<table class="noborder centpercent">';
 
 print '<tr class="liste_titre"><td colspan="2"><i class="fas fa-cogs"></i> General Settings</td></tr>';
+print '<tr><td class="titlefield"><i class="fas fa-power-off"></i> Enable user tracking</td><td><input type="checkbox" name="enable_tracking" '.(getDolGlobalInt('USERACTIVITYTRACKER_ENABLE_TRACKING', 1)?'checked':'').'> <em>Enable activity tracking for all users (disable to stop all tracking)</em></td></tr>';
 print '<tr><td class="titlefield"><i class="fas fa-calendar-alt"></i> Retention (days)</td><td><input class="flat" type="number" name="retention" min="1" value="'.dol_escape_htmltag($days).'"> <em>How long to keep activity data</em></td></tr>';
 print '<tr><td><i class="fas fa-user-clock"></i> Enable session tracking</td><td><input type="checkbox" name="session_tracking" '.(getDolGlobalString('USERACTIVITYTRACKER_ENABLE_SESSION_TRACKING')?'checked':'').'></td></tr>';
 print '<tr><td><i class="fas fa-user-shield"></i> Skip sensitive data</td><td><input type="checkbox" name="skip_sensitive" '.(getDolGlobalString('USERACTIVITYTRACKER_SKIP_SENSITIVE_DATA')?'checked':'').'></td></tr>';
@@ -182,7 +184,7 @@ if (class_exists('UserActivity')) {
     $by_user   = (array)($stats['by_user'] ?? array());
 }
 
-print '<tr><td class="titlefield"><i class="fas fa-tag"></i> Module Version</td><td><strong>2.4.0</strong></td></tr>';
+print '<tr><td class="titlefield"><i class="fas fa-tag"></i> Module Version</td><td><strong>2.5.0</strong></td></tr>';
 print '<tr><td><i class="fas fa-chart-line"></i> Total Activities (last 30 days)</td><td><strong>'.$tot.'</strong></td></tr>';
 print '<tr><td><i class="fas fa-tasks"></i> Unique Actions (last 30 days)</td><td><strong>'.count($by_action).'</strong></td></tr>';
 print '<tr><td><i class="fas fa-users"></i> Active Users (last 30 days)</td><td><strong>'.count($by_user).'</strong></td></tr>';

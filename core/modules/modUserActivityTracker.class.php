@@ -2,7 +2,7 @@
 /**
  * Module descriptor — User Activity Tracker
  * Path: custom/useractivitytracker/core/modules/modUserActivityTracker.class.php
- * Version: 2.4.0 — dynamic main.inc.php resolver, bug fixes
+ * Version: 2.5.0 — enable triggers by default, fix user tracking
  */
 
 require_once DOL_DOCUMENT_ROOT . '/core/modules/DolibarrModules.class.php';
@@ -20,7 +20,7 @@ class modUserActivityTracker extends DolibarrModules
         $this->family       = 'technic';
         $this->name         = preg_replace('/^mod/i', '', get_class($this));
         $this->description  = 'Track and analyse user activity across Dolibarr';
-        $this->version      = '2.4.0';
+        $this->version      = '2.5.0';
         $this->const_name   = 'MAIN_MODULE_' . strtoupper($this->rights_class);
         $this->special      = 0;
         $this->picto        = 'title.svg@useractivitytracker';
@@ -50,6 +50,7 @@ class modUserActivityTracker extends DolibarrModules
             array('USERACTIVITYTRACKER_WEBHOOK_URL',    'chaine', '',    'Webhook URL',                     1, ''),
             array('USERACTIVITYTRACKER_WEBHOOK_SECRET', 'chaine', '',    'Webhook secret (optional)',       1, ''),
             array('USERACTIVITYTRACKER_ENABLE_ANOMALY', 'chaine', '1',   'Enable anomaly heuristics (0/1)', 1, ''),
+            array('USERACTIVITYTRACKER_ENABLE_TRACKING', 'chaine', '1',  'Enable user tracking by default (0/1)', 1, ''),
         );
 
         // Rights

@@ -3,7 +3,7 @@
 /**
  * DAO for alt_user_activity
  * Path: custom/useractivitytracker/class/useractivity.class.php
- * Version: 2.4.0 — dynamic main.inc.php resolver, bug fixes
+ * Version: 2.5.0 — enable triggers by default, fix user tracking
  */
 
 require_once DOL_DOCUMENT_ROOT . '/core/class/commonobject.class.php';

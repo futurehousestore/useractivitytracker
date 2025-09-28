@@ -3,7 +3,7 @@
 /**
  * Universal logger trigger for User Activity Tracker
  * Path: custom/useractivitytracker/core/triggers/interface_99_modUserActivityTracker_Trigger.class.php
- * Version: 2.4.0 — dynamic main.inc.php resolver, bug fixes
+ * Version: 2.5.0 — enable triggers by default, fix user tracking
  */
 class InterfaceUserActivityTrackerTrigger
 {
@@ -27,7 +27,10 @@ class InterfaceUserActivityTrackerTrigger
         // Avoid recursion and skip tracking for activity tracker itself
         if (! empty($object) && is_object($object) && isset($object->element) && $object->element === 'alt_user_activity') return 0;
         
-        // Skip if user tracking is disabled for this user
+        // Skip if user tracking is globally disabled
+        if (!getDolGlobalInt('USERACTIVITYTRACKER_ENABLE_TRACKING', 1)) return 0;
+        
+        // Skip if user tracking is disabled for this specific user
         if (getDolGlobalString('USERACTIVITYTRACKER_SKIP_USER_'.$user->id)) return 0;
 
         try {

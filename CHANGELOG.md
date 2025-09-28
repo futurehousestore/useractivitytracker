@@ -2,6 +2,30 @@
 
 All notable changes to the User Activity Tracker module will be documented in this file.
 
+## [2.5.0] - 2024-01-22
+
+### 🚀 Activity Tracking Fix & Enhancement Release
+
+This release fixes the core issue where user activity tracking was not working by default and enhances the configuration options.
+
+#### 🔧 Critical Fixes
+- **Fixed User Tracking by Default**: Users are now tracked by default instead of being skipped
+- **Added Global Tracking Toggle**: New `USERACTIVITYTRACKER_ENABLE_TRACKING` constant enables/disables all tracking
+- **Enhanced Diagnostic Checks**: Improved diagnostic logic to detect tracking configuration issues
+- **Better Default Configuration**: Module now installs with tracking enabled by default
+
+#### ⚡ New Features  
+- **Master Tracking Switch**: Added checkbox in Settings to enable/disable all user tracking
+- **Enhanced Setup Interface**: New configuration option with clear explanation
+- **Improved Diagnostics**: Better diagnostic messages to identify tracking issues
+- **Version Consistency**: Updated all files to version 2.5.0 across the entire codebase
+
+#### 🛠️ Technical Improvements
+- **Trigger Logic Enhancement**: Added global tracking check before individual user checks
+- **Configuration Constants**: New module constant for controlling tracking behavior
+- **Better Error Messages**: Clearer diagnostic output for troubleshooting
+- **UI/UX Improvements**: Enhanced setup page with better organization
+
 ## [2.4.0] - 2024-01-21
 
 ### 🚀 Critical Bug Fix Release
