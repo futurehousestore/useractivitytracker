@@ -2,7 +2,7 @@
 /**
  * Hooks class for User Activity Tracker - Enhanced Login/Logout Tracking
  * Path: custom/useractivitytracker/core/hooks/interface_99_modUserActivityTracker_Hooks.class.php  
- * Version: 2.0.0
+ * Version: 2.2.0
  */
 
 require_once DOL_DOCUMENT_ROOT . '/core/class/hookmanager.class.php';
