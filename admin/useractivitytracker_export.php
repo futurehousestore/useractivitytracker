@@ -2,9 +2,31 @@
 /**
  * Export Data page
  * Path: custom/useractivitytracker/admin/useractivitytracker_export.php
- * Version: 2.3.0
+ * Version: 2.4.0 — dynamic main.inc.php resolver, bug fixes
  */
-require '../../main.inc.php';
+
+/* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */
+$dir  = __DIR__;
+$main = null;
+for ($i = 0; $i < 10; $i++) {
+    $candidate = $dir . '/main.inc.php';
+    if (is_file($candidate)) { $main = $candidate; break; }
+    $dir = dirname($dir);
+}
+if (!$main) {
+    // Fallbacks for common layouts
+    $fallbacks = array('../../../main.inc.php', '../../../../main.inc.php', '../../main.inc.php');
+    foreach ($fallbacks as $f) {
+        $p = __DIR__ . '/' . $f;
+        if (is_file($p)) { $main = $p; break; }
+    }
+}
+if (!$main) {
+    header($_SERVER['SERVER_PROTOCOL'].' 500 Internal Server Error');
+    echo 'Fatal: Unable to locate Dolibarr main.inc.php from ' . __FILE__;
+    exit;
+}
+require $main;
 require_once '../class/useractivity.class.php';
 
 if (empty($user->rights->useractivitytracker->export)) accessforbidden();

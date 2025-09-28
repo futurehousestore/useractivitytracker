@@ -3,7 +3,7 @@
 /**
  * Universal logger trigger for User Activity Tracker
  * Path: custom/useractivitytracker/core/triggers/interface_99_modUserActivityTracker_Trigger.class.php
- * Version: 2.3.0
+ * Version: 2.4.0 — dynamic main.inc.php resolver, bug fixes
  */
 class InterfaceUserActivityTrackerTrigger
 {

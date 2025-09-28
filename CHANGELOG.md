@@ -2,6 +2,34 @@
 
 All notable changes to the User Activity Tracker module will be documented in this file.
 
+## [2.4.0] - 2024-01-21
+
+### 🚀 Critical Bug Fix Release
+
+This release resolves critical path resolution issues that prevented module files from loading in certain Dolibarr installations.
+
+#### 🔧 Bug Fixes
+- **Fixed Dynamic main.inc.php Resolution**: Replaced hardcoded `require '../../main.inc.php'` with dynamic path resolution in all affected files
+- **Enhanced Path Resolution**: Updated `useractivitytracker_export.php`, `useractivitytracker_analysis.php`, `useractivitytracker_view.php`, and `scripts/export.php` with robust path finding
+- **Directory Structure Independence**: Module now works regardless of Dolibarr installation directory structure variations
+- **Fallback Path Support**: Added comprehensive fallback paths for different installation layouts
+
+#### ⚡ Technical Improvements  
+- **Version Consistency**: Updated all files to version 2.4.0 across the entire codebase
+- **Code Maintainability**: Consistent dynamic path resolution pattern across all PHP files
+- **Error Handling**: Improved error messages when main.inc.php cannot be located
+
+#### 📁 Files Modified
+- **Admin Pages**: `useractivitytracker_export.php`, `useractivitytracker_analysis.php`, `useractivitytracker_view.php` - Dynamic path resolution
+- **Scripts**: `scripts/export.php` - Dynamic path resolution  
+- **All PHP Files**: Updated version headers across admin/, class/, and core/ directories
+- **Documentation**: Updated README.md version references
+
+#### 🎯 Impact
+- **Compatibility**: Resolves "No such file or directory" errors in various Dolibarr installations
+- **Reliability**: Module now loads consistently across different hosting environments
+- **Future-Proofing**: Path resolution system adapts to directory structure changes
+
 ## [2.3.0] - 2024-01-20
 
 ### 🚀 Bug Fixes and Enhancement Release
