@@ -4,6 +4,7 @@
  * Path: custom/useractivitytracker/core/modules/modUserActivityTracker.class.php
  * Version: 1.0.0
  */
+
 require_once DOL_DOCUMENT_ROOT . '/core/modules/DolibarrModules.class.php';
 
 class modUserActivityTracker extends DolibarrModules
@@ -13,44 +14,52 @@ class modUserActivityTracker extends DolibarrModules
         global $langs, $conf;
         parent::__construct($db);
 
-        $this->db = $db;
-        $this->numero = 990501; // random large id avoiding collisions
+        $this->db           = $db;
+        $this->numero       = 990501; // random large id avoiding collisions
         $this->rights_class = 'useractivitytracker';
-        $this->family = "technic";
-        $this->name = preg_replace('/^mod/i','', get_class($this));
-        $this->description = "Track and analyse user activity across Dolibarr";
-        $this->version = '1.0.0';
-        $this->const_name = 'MAIN_MODULE_'.strtoupper($this->rights_class);
-        $this->special = 0;
-        $this->picto = 'title.svg@useractivitytracker';
+        $this->family       = 'technic';
+        $this->name         = preg_replace('/^mod/i', '', get_class($this));
+        $this->description  = 'Track and analyse user activity across Dolibarr';
+        $this->version      = '1.0.0';
+        $this->const_name   = 'MAIN_MODULE_' . strtoupper($this->rights_class);
+        $this->special      = 0;
+        $this->picto        = 'title.svg@useractivitytracker';
 
+        // Parts
         $this->module_parts = array(
-            'triggers' => 1
+            'triggers' => 1,
+            // 'hooks' => array('all'),
         );
 
         // Create these dirs at enable time (relative to htdocs/custom)
         $this->dirs = array('/useractivitytracker/');
 
+        // Config pages
         $this->config_page_url = array('useractivitytracker_setup.php@useractivitytracker');
-        $this->depends = array(); // core only
-        $this->phpmin = array(7, 4); // PHP 7.4+ required
-        $this->need_dolibarr_version = array(14, 0); // Dolibarr 14.0+ required (tested up to 22.0.0)
-        $this->langfiles = array('useractivitytracker@useractivitytracker');
 
+        // Compatibility
+        $this->depends               = array();
+        $this->conflictwith          = array();
+        $this->phpmin                = array(7, 4);
+        $this->need_dolibarr_version = array(14, 0); // tested up to 22.x
+        $this->langfiles             = array('useractivitytracker@useractivitytracker');
+
+        // Constants installed on enable
         $this->const = array(
-            0 => array('USERACTIVITYTRACKER_RETENTION_DAYS','chaine','365','Retention in days',1,''),
-            1 => array('USERACTIVITYTRACKER_WEBHOOK_URL','chaine','','Webhook URL',1,''),
-            2 => array('USERACTIVITYTRACKER_WEBHOOK_SECRET','chaine','','Webhook secret (optional)',1,''),
-            3 => array('USERACTIVITYTRACKER_ENABLE_ANOMALY','chaine','1','Enable anomaly heuristics',1,''),
+            array('USERACTIVITYTRACKER_RETENTION_DAYS', 'chaine', '365', 'Retention in days',               1, ''),
+            array('USERACTIVITYTRACKER_WEBHOOK_URL',    'chaine', '',    'Webhook URL',                     1, ''),
+            array('USERACTIVITYTRACKER_WEBHOOK_SECRET', 'chaine', '',    'Webhook secret (optional)',       1, ''),
+            array('USERACTIVITYTRACKER_ENABLE_ANOMALY', 'chaine', '1',   'Enable anomaly heuristics (0/1)', 1, ''),
         );
 
         // Rights
         $this->rights = array();
-        $r=0;
+        $r = 0;
+
         $this->rights[$r][0] = 99050101;
         $this->rights[$r][1] = 'Read activity dashboard';
         $this->rights[$r][2] = 'r';
-        $this->rights[$r][3] = 1;
+        $this->rights[$r][3] = 1; // granted to admin on install
         $this->rights[$r][4] = 'read';
         $r++;
 
@@ -68,199 +77,128 @@ class modUserActivityTracker extends DolibarrModules
         $this->rights[$r][4] = 'admin';
         $r++;
 
-        // Menus
+        // ---------------------------
+        // Menus (do NOT prefix with /custom; Dolibarr resolves it)
+        // ---------------------------
         $this->menu = array();
-        
-        // Main menu item - top level
-        $this->menu[0] = array(
-            'fk_menu'  => '',
+
+        // Top: Activity Tracker
+        $this->menu[] = array(
+            'fk_menu'  => 0,                      // <— TOP MENU: must be 0
             'type'     => 'top',
             'titre'    => 'Activity Tracker',
             'mainmenu' => 'useractivitytracker',
-            'leftmenu' => '',
-            'url'      => '/custom/useractivitytracker/admin/useractivitytracker_dashboard.php',
+            'leftmenu' => '',                     // no left key at top level
+            'url'      => '/useractivitytracker/admin/useractivitytracker_dashboard.php',
             'langs'    => 'useractivitytracker@useractivitytracker',
             'position' => 55,
-            'enabled'  => '1',
+            'enabled'  => '$conf->useractivitytracker->enabled',
             'perms'    => '$user->rights->useractivitytracker->read',
             'target'   => '',
             'user'     => 2
         );
-        
-        // Dashboard submenu
-        $this->menu[1] = array(
-            'fk_menu'  => 'fk_mainmenu=useractivitytracker',
+
+        // Left: Dashboard
+        $this->menu[] = array(
+            'fk_menu'  => 'fk_mainmenu=useractivitytracker',   // <— LEFT under our top
             'type'     => 'left',
             'titre'    => 'Dashboard',
             'mainmenu' => 'useractivitytracker',
             'leftmenu' => 'useractivitytracker_dashboard',
-            'url'      => '/custom/useractivitytracker/admin/useractivitytracker_dashboard.php',
+            'url'      => '/useractivitytracker/admin/useractivitytracker_dashboard.php',
             'langs'    => 'useractivitytracker@useractivitytracker',
             'position' => 100,
-            'enabled'  => '1',
+            'enabled'  => '$conf->useractivitytracker->enabled',
             'perms'    => '$user->rights->useractivitytracker->read',
             'target'   => '',
             'user'     => 2
         );
-        
-        // Settings submenu
-        $this->menu[2] = array(
+
+        // Left: Settings
+        $this->menu[] = array(
             'fk_menu'  => 'fk_mainmenu=useractivitytracker',
             'type'     => 'left',
             'titre'    => 'Settings',
             'mainmenu' => 'useractivitytracker',
             'leftmenu' => 'useractivitytracker_setup',
-            'url'      => '/custom/useractivitytracker/admin/useractivitytracker_setup.php',
+            'url'      => '/useractivitytracker/admin/useractivitytracker_setup.php',
             'langs'    => 'useractivitytracker@useractivitytracker',
             'position' => 200,
-            'enabled'  => '1',
+            'enabled'  => '$conf->useractivitytracker->enabled',
             'perms'    => '$user->rights->useractivitytracker->admin',
             'target'   => '',
             'user'     => 2
         );
-        
-        // Export submenu
-        $this->menu[3] = array(
+
+        // Left: Export
+        $this->menu[] = array(
             'fk_menu'  => 'fk_mainmenu=useractivitytracker',
             'type'     => 'left',
             'titre'    => 'Export Data',
             'mainmenu' => 'useractivitytracker',
             'leftmenu' => 'useractivitytracker_export',
-            'url'      => '/custom/useractivitytracker/admin/useractivitytracker_dashboard.php#export',
+            'url'      => '/useractivitytracker/admin/useractivitytracker_dashboard.php#export',
             'langs'    => 'useractivitytracker@useractivitytracker',
             'position' => 300,
-            'enabled'  => '1',
+            'enabled'  => '$conf->useractivitytracker->enabled',
             'perms'    => '$user->rights->useractivitytracker->export',
             'target'   => '',
             'user'     => 2
         );
-        
-        // Analysis submenu
-        $this->menu[4] = array(
+
+        // Left: Analysis
+        $this->menu[] = array(
             'fk_menu'  => 'fk_mainmenu=useractivitytracker',
             'type'     => 'left',
             'titre'    => 'Analysis',
             'mainmenu' => 'useractivitytracker',
             'leftmenu' => 'useractivitytracker_analysis',
-            'url'      => '/custom/useractivitytracker/admin/useractivitytracker_analysis.php',
+            'url'      => '/useractivitytracker/admin/useractivitytracker_analysis.php',
             'langs'    => 'useractivitytracker@useractivitytracker',
             'position' => 400,
-            'enabled'  => '1',
+            'enabled'  => '$conf->useractivitytracker->enabled',
             'perms'    => '$user->rights->useractivitytracker->read',
             'target'   => '',
             'user'     => 2
         );
-        
-        // Keep legacy Tools menu for backward compatibility
-        $this->menu[5] = array(
-            'fk_menu'  => 'fk_mainmenu=tools,fk_leftmenu=',
+
+        // Optional: legacy Tools menu
+        $this->menu[] = array(
+            'fk_menu'  => 'fk_mainmenu=tools',
             'type'     => 'left',
             'titre'    => 'User Activity',
             'mainmenu' => 'tools',
             'leftmenu' => 'useractivitytracker',
-            'url'      => '/custom/useractivitytracker/admin/useractivitytracker_dashboard.php',
+            'url'      => '/useractivitytracker/admin/useractivitytracker_dashboard.php',
             'langs'    => 'useractivitytracker@useractivitytracker',
             'position' => 1000,
-            'enabled'  => '1',
+            'enabled'  => '$conf->useractivitytracker->enabled',
             'perms'    => '$user->rights->useractivitytracker->read',
             'target'   => '',
             'user'     => 2
         );
     }
 
+    /**
+     * Enable module
+     */
     public function init($options = '')
     {
-        // Load tables, keys and data required by module
-        $result = $this->_load_tables('/useractivitytracker/sql/', '');
-        if ($result <= 0) {
-            return -1;
-        }
-        return $result;
-    }
+        // Load SQL from /useractivitytracker/sql/ if present
+        $this->_load_tables('/useractivitytracker/sql/');
 
-    public function remove($options = '')
-    {
-        // Keep table by default
-        return 1;
+        // Register constants, rights, menus, boxes, cron, etc.
+        $sql = array(); // extra SQL statements if needed
+        return $this->_init($sql, $options);
     }
 
     /**
-     * Create tables, keys and data required by module
-     * Files llx_table1.sql, llx_table1.key.sql llx_data.sql with create table, create keys
-     * and create data commands must be stored in directory /useractivitytracker/sql/
-     * This function is called by this->init
-     *
-     * @param   string      $reldir     Relative directory path where to scan files
-     * @param   string      $onlywithsuffix     Only with this suffix
-     * @return  int                     <=0 if KO, >0 if OK
+     * Disable module
      */
-    protected function _load_tables($reldir, $onlywithsuffix = '')
+    public function remove($options = '')
     {
-        global $conf;
-        
-        // Use parent method to load SQL files properly
-        $error = 0;
-        $sql_dir = DOL_DOCUMENT_ROOT . '/custom' . $reldir;
-        
-        if (is_dir($sql_dir)) {
-            $handle = opendir($sql_dir);
-            if ($handle) {
-                while (($file = readdir($handle)) !== false) {
-                    if (is_file($sql_dir . $file) && preg_match('/\.sql$/i', $file)) {
-                        $sql_content = file_get_contents($sql_dir . $file);
-                        if ($sql_content) {
-                            // Replace llx_ with actual prefix
-                            $sql_content = str_replace('llx_', MAIN_DB_PREFIX, $sql_content);
-                            
-                            // Split multiple statements if any
-                            $statements = array_filter(array_map('trim', explode(';', $sql_content)));
-                            
-                            foreach ($statements as $statement) {
-                                if (!empty($statement)) {
-                                    $result = $this->db->query($statement);
-                                    if (!$result) {
-                                        $error++;
-                                        dol_syslog("Error executing SQL: " . $this->db->lasterror(), LOG_ERR);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                closedir($handle);
-            }
-        } else {
-            // Fallback to embedded SQL if directory doesn't exist
-            $sql = "CREATE TABLE IF NOT EXISTS " . MAIN_DB_PREFIX . "alt_user_activity (
-                rowid INTEGER AUTO_INCREMENT PRIMARY KEY,
-                tms TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                datestamp DATETIME NULL,
-                entity INTEGER NOT NULL DEFAULT 1,
-                action VARCHAR(128) NOT NULL,
-                element_type VARCHAR(64) NULL,
-                object_id INTEGER NULL,
-                ref VARCHAR(128) NULL,
-                userid INTEGER NULL,
-                username VARCHAR(128) NULL,
-                ip VARCHAR(64) NULL,
-                payload LONGTEXT NULL,
-                severity VARCHAR(16) NULL,
-                kpi1 DECIMAL(24,6) NULL,
-                kpi2 DECIMAL(24,6) NULL,
-                note VARCHAR(255) NULL,
-                INDEX idx_action (action),
-                INDEX idx_element (element_type, object_id),
-                INDEX idx_user (userid),
-                INDEX idx_datestamp (datestamp),
-                INDEX idx_entity (entity)
-            ) ENGINE=InnoDB";
-            
-            $result = $this->db->query($sql);
-            if (!$result) {
-                $error++;
-            }
-        }
-        
-        return $error ? 0 : 1;
+        // Keep DB tables by default. Remove framework artifacts.
+        $sql = array(); // extra cleanup SQL if needed
+        return $this->_remove($sql, $options);
     }
 }
