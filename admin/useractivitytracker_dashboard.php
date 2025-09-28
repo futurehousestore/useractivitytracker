@@ -191,7 +191,7 @@ print '<button id="themeToggle" class="theme-toggle" title="Toggle Dark Mode">';
 print '<i class="fas fa-moon"></i>';
 print '</button>';
 
-print load_fiche_titre('User Activity — Dashboard v2.3.0', '', 'object_useractivitytracker@useractivitytracker');
+print load_fiche_titre('User Activity — Dashboard v2.5.0', '', 'object_useractivitytracker@useractivitytracker');
 
 /* Enhanced Statistics Grid */
 print '<div class="stats-grid">';
@@ -317,7 +317,7 @@ print '<i class="fas fa-cogs"></i> Settings';
 print '</button>';
 print '</div>';
 print '<div class="version-badge">';
-print '<i class="fas fa-tag"></i> v2.3.0';
+print '<i class="fas fa-tag"></i> v2.5.0';
 print '</div>';
 print '</div>';
 
