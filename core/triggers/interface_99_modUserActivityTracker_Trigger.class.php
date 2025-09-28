@@ -2,7 +2,7 @@
 /**
  * Universal logger trigger for User Activity Tracker
  * Path: custom/useractivitytracker/core/triggers/interface_99_modUserActivityTracker_Trigger.class.php
- * Version: 2.5.1 — FIX: extend DolibarrTriggers + correct run_trigger() signature
+ * Version: 2.5.1 — FIX: extend DolibarrTriggers + correct runTrigger() signature
  */
 
 if (!class_exists('DolibarrTriggers')) {
@@ -23,7 +23,7 @@ class InterfaceUserActivityTrackerTrigger extends DolibarrTriggers
     public function getDesc()    { return $this->description; }
     public function getVersion() { return $this->version; }
 
-    public function run_trigger($action, $object, $user, $langs, $conf)
+    public function runTrigger($action, $object, $user, $langs, $conf)
     {
         if (empty($conf->useractivitytracker->enabled)) return 0;
         if (!getDolGlobalInt('USERACTIVITYTRACKER_ENABLE_TRACKING', 1)) return 0;
