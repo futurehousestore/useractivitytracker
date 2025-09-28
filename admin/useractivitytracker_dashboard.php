@@ -60,7 +60,7 @@ $res = $db->query($sql);
 if ($res && ($obj = $db->fetch_object($res))) $totalCount = $obj->total;
 
 $recentActivities = array();
-$sql = "SELECT datestamp, action, element_type, username, ref FROM {$prefix}alt_user_activity {$cond} ORDER BY datestamp DESC LIMIT 20";
+$sql = "SELECT rowid, datestamp, action, element_type, username, ref FROM {$prefix}alt_user_activity {$cond} ORDER BY datestamp DESC LIMIT 20";
 $res = $db->query($sql);
 if ($res) while ($o=$db->fetch_object($res)) $recentActivities[]=$o;
 
@@ -164,7 +164,8 @@ foreach($recentActivities as $r) {
     $time = dol_print_date(dol_stringtotime($r->datestamp), '%H:%M');
     $date = dol_print_date(dol_stringtotime($r->datestamp), '%d/%m');
     print '<tr>';
-    print '<td><small>'.$date.' '.$time.'</small><br>'.dol_escape_htmltag($r->action);
+    print '<td><small>'.$date.' '.$time.'</small><br>';
+    print '<a href="useractivitytracker_view.php?id='.$r->rowid.'" title="View details">'.dol_escape_htmltag($r->action).'</a>';
     if ($r->ref) print '<br><em>'.dol_escape_htmltag($r->ref).'</em>';
     print '</td>';
     print '<td>'.dol_escape_htmltag($r->username).'</td>';

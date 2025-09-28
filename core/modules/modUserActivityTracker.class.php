@@ -134,8 +134,24 @@ class modUserActivityTracker extends DolibarrModules
             'user'     => 2
         );
         
-        // Keep legacy Tools menu for backward compatibility
+        // Analysis submenu
         $this->menu[4] = array(
+            'fk_menu'  => 'fk_mainmenu=useractivitytracker',
+            'type'     => 'left',
+            'titre'    => 'Analysis',
+            'mainmenu' => 'useractivitytracker',
+            'leftmenu' => 'useractivitytracker_analysis',
+            'url'      => '/custom/useractivitytracker/admin/useractivitytracker_analysis.php',
+            'langs'    => 'useractivitytracker@useractivitytracker',
+            'position' => 400,
+            'enabled'  => '1',
+            'perms'    => '$user->rights->useractivitytracker->read',
+            'target'   => '',
+            'user'     => 2
+        );
+        
+        // Keep legacy Tools menu for backward compatibility
+        $this->menu[5] = array(
             'fk_menu'  => 'fk_mainmenu=tools,fk_leftmenu=',
             'type'     => 'left',
             'titre'    => 'User Activity',

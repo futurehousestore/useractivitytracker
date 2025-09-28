@@ -1,0 +1,64 @@
+<?php
+/**
+ * Language file for User Activity Tracker module (English)
+ * Path: custom/useractivitytracker/langs/useractivitytracker.lang
+ * Version: 1.0.0
+ */
+
+// Module
+$langs->trans("ModuleUserActivityTrackerName") = "User Activity Tracker";
+$langs->trans("ModuleUserActivityTrackerDesc") = "Track and analyze user activity across Dolibarr with comprehensive dashboard, analytics, and security monitoring";
+
+// Menu entries
+$langs->trans("UserActivityTracker") = "Activity Tracker";
+$langs->trans("UserActivityDashboard") = "Dashboard"; 
+$langs->trans("UserActivitySettings") = "Settings";
+$langs->trans("UserActivityExport") = "Export Data";
+$langs->trans("UserActivityAnalysis") = "Analysis";
+
+// Dashboard
+$langs->trans("UserActivityDashboardTitle") = "User Activity Dashboard";
+$langs->trans("ActivityByType") = "Activity by Type";
+$langs->trans("ActivityByUser") = "Activity by User";
+$langs->trans("ActivityByElement") = "Activity by Element Type";
+$langs->trans("ActivityTimeline") = "Activity Timeline";
+$langs->trans("RecentActivities") = "Recent Activities";
+$langs->trans("SummaryStatistics") = "Summary Statistics";
+$langs->trans("TotalActivities") = "Total Activities";
+$langs->trans("UniqueActions") = "Unique Actions";
+$langs->trans("ActiveUsers") = "Active Users";
+$langs->trans("DateRange") = "Date Range";
+
+// Settings
+$langs->trans("UserActivitySettings") = "User Activity Tracker Settings";
+$langs->trans("GeneralSettings") = "General Settings";
+$langs->trans("WebhookSettings") = "Webhook Settings";
+$langs->trans("SecurityMonitoring") = "Security & Monitoring";
+$langs->trans("RetentionDays") = "Retention (days)";
+$langs->trans("EnableSessionTracking") = "Enable session tracking";
+$langs->trans("SkipSensitiveData") = "Skip sensitive data";
+$langs->trans("MaxPayloadSize") = "Max payload size (bytes)";
+$langs->trans("WebhookURL") = "Webhook URL";
+$langs->trans("WebhookSecret") = "Webhook Secret";
+$langs->trans("EnableAnomalyDetection") = "Enable anomaly detection";
+
+// Analysis
+$langs->trans("UserActivityAnalysis") = "Activity Analysis";
+$langs->trans("ActivityMetrics") = "Activity Metrics";
+$langs->trans("SecurityStatus") = "Security Status";
+$langs->trans("ActivityByHour") = "Activity by Hour of Day";
+$langs->trans("AnomaliesDetected") = "Anomalies Detected";
+$langs->trans("SecurityAnomalies") = "Security Anomalies";
+$langs->trans("Recommendations") = "Recommendations";
+
+// Rights
+$langs->trans("Permission99050101") = "Read activity dashboard";
+$langs->trans("Permission99050102") = "Export activity data";
+$langs->trans("Permission99050103") = "Administer module";
+
+// Messages
+$langs->trans("SettingsSavedSuccessfully") = "Settings saved successfully";
+$langs->trans("WebhookTestSuccessful") = "Webhook test successful";
+$langs->trans("WebhookTestFailed") = "Webhook test failed";
+$langs->trans("NoDataFound") = "No data found";
+$langs->trans("NoAnomaliesDetected") = "No anomalies detected";
