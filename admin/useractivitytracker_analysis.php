@@ -43,6 +43,9 @@ $activity = new UserActivity($db);
 // Get comprehensive stats
 $stats = $activity->getActivityStats($from, $to, $conf->entity);
 
+// Get diagnostics for troubleshooting
+$diagnostics = $activity->getDiagnostics($conf->entity);
+
 // Get anomalies if enabled
 $anomalies = array();
 if (getDolGlobalString('USERACTIVITYTRACKER_ENABLE_ANOMALY')) {
@@ -190,7 +193,103 @@ print '<h3>💡 Recommendations</h3>';
 print '<ul>';
 
 if ($stats['total'] == 0) {
-    print '<li>No activity data found for the selected period. Check if the module is properly tracking activities.</li>';
+    print '<li><strong>⚠️ No activity data found for the selected period.</strong></li>';
+    
+    // Enhanced diagnostics using the diagnostic method
+    $diagnostic_results = array();
+    
+    // 1. Check table existence
+    if (!$diagnostics['table_exists']) {
+        $diagnostic_results[] = '❌ Database table <code>'.$db->prefix().'alt_user_activity</code> does not exist';
+    } else {
+        $diagnostic_results[] = '✅ Database table exists';
+        
+        // 2. Check table structure
+        $required_columns = array('rowid', 'datestamp', 'entity', 'action', 'userid', 'username');
+        $missing_columns = array_diff($required_columns, $diagnostics['table_columns']);
+        if (!empty($missing_columns)) {
+            $diagnostic_results[] = '❌ Table missing required columns: ' . implode(', ', $missing_columns);
+        } else {
+            $diagnostic_results[] = '✅ Table structure is correct';
+        }
+        
+        // 3. Check for recent activity
+        if ($diagnostics['recent_activity_count'] > 0) {
+            $diagnostic_results[] = '📊 Found '.$diagnostics['recent_activity_count'].' activities in the last 7 days';
+            
+            if ($diagnostics['latest_activity']) {
+                $latest_date = dol_print_date($db->jdate($diagnostics['latest_activity']['datestamp']), 'dayhour');
+                $diagnostic_results[] = '📅 Latest activity: '.$diagnostics['latest_activity']['action'].' by '.$diagnostics['latest_activity']['username'].' on '.$latest_date;
+            }
+            
+            // If recent data exists but none in selected period, it's a date range issue
+            $diagnostic_results[] = '💡 Recent activity found - the issue may be with your selected date range ('.$from.' to '.$to.')';
+        } else {
+            $diagnostic_results[] = '❌ No activities found in the last 7 days - tracking may not be working';
+            
+            // Additional checks when no recent activity
+            if (empty($conf->modules_parts['triggers']) || !in_array(1, $conf->modules_parts['triggers'])) {
+                $diagnostic_results[] = '❌ Triggers may not be enabled in Dolibarr configuration';
+            } else {
+                $diagnostic_results[] = '✅ Triggers are enabled in Dolibarr';
+            }
+            
+            // Check if module is active
+            if (empty($conf->useractivitytracker->enabled)) {
+                $diagnostic_results[] = '❌ User Activity Tracker module may not be fully enabled';
+            } else {
+                $diagnostic_results[] = '✅ Module is enabled';
+            }
+        }
+        
+        // 4. Test database write permissions (only if no recent activity)
+        if ($diagnostics['recent_activity_count'] == 0) {
+            try {
+                $test_sql = "INSERT INTO ".$db->prefix()."alt_user_activity 
+                            (datestamp, entity, action, userid, username, severity) 
+                            VALUES (NOW(), ".(int)$conf->entity.", 'TEST_DIAGNOSTIC', ".(int)$user->id.", '".$db->escape($user->login)."', 'info')";
+                $test_res = $db->query($test_sql);
+                if ($test_res) {
+                    // Clean up test record immediately
+                    $last_id = $db->last_insert_id($db->prefix()."alt_user_activity");
+                    if ($last_id) {
+                        $db->query("DELETE FROM ".$db->prefix()."alt_user_activity WHERE rowid = ".(int)$last_id);
+                    }
+                    $diagnostic_results[] = '✅ Database write permissions OK';
+                } else {
+                    $diagnostic_results[] = '❌ Database write test failed: ' . $db->lasterror();
+                }
+            } catch (Exception $e) {
+                $diagnostic_results[] = '❌ Database write test failed: ' . $e->getMessage();
+            }
+        }
+    }
+    
+    // Display diagnostic results
+    print '<li><strong>🔍 Diagnostic Results:</strong><ul>';
+    foreach ($diagnostic_results as $result) {
+        print '<li style="margin: 5px 0;">' . $result . '</li>';
+    }
+    print '</ul></li>';
+    
+    // Provide specific troubleshooting steps based on findings
+    print '<li><strong>🔧 Troubleshooting Steps:</strong><ul>';
+    if (!$diagnostics['table_exists']) {
+        print '<li><strong>Priority:</strong> Disable and re-enable the User Activity Tracker module to recreate the database table</li>';
+        print '<li>Check database permissions for table creation</li>';
+        print '<li>Verify the module installation completed successfully</li>';
+    } elseif ($diagnostics['recent_activity_count'] == 0) {
+        print '<li><strong>Priority:</strong> The module appears to not be tracking activities. Check:</li>';
+        print '<li style="margin-left: 20px;">• Server error logs for trigger execution failures</li>';
+        print '<li style="margin-left: 20px;">• Try performing some actions in Dolibarr (create/edit records, login/logout) and refresh this page</li>';
+        print '<li style="margin-left: 20px;">• Verify triggers are enabled in Dolibarr configuration</li>';
+        print '<li style="margin-left: 20px;">• Check if user tracking is disabled for your user (USERACTIVITYTRACKER_SKIP_USER_'.$user->id.')</li>';
+    } else {
+        print '<li>Adjust the selected date range to include the period when activities occurred</li>';
+        print '<li>The latest activity was on '.dol_print_date($db->jdate($diagnostics['latest_activity']['datestamp']), 'day').'</li>';
+    }
+    print '</ul></li>';
+    
 } else {
     if (count($stats['by_user']) < 3) {
         print '<li>Consider expanding user adoption - only '.count($stats['by_user']).' users active in this period.</li>';

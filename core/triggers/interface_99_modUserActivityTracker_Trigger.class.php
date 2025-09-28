@@ -98,8 +98,23 @@ class InterfaceUserActivityTrackerTrigger
 
             $res = $this->db->query($sql);
             if (!$res) {
-                error_log("User Activity Tracker: Failed to log activity - " . $this->db->lasterror());
-                return -1;
+                $error_msg = "User Activity Tracker: Failed to log activity - " . $this->db->lasterror() . 
+                           " | Action: $action | User: " . $user->login . " | Entity: " . $conf->entity;
+                error_log($error_msg);
+                
+                // Check if table exists and try to create it if missing
+                $table_check = $this->db->query("SHOW TABLES LIKE '".$this->db->prefix()."alt_user_activity'");
+                if (!$table_check || $this->db->num_rows($table_check) == 0) {
+                    error_log("User Activity Tracker: Table ".$this->db->prefix()."alt_user_activity does not exist - attempting to create");
+                    $this->createTableIfMissing();
+                    // Retry the insert once
+                    $res = $this->db->query($sql);
+                    if (!$res) {
+                        error_log("User Activity Tracker: Retry failed after table creation - " . $this->db->lasterror());
+                    }
+                }
+                
+                if (!$res) return -1;
             }
 
             // Send webhook if configured
@@ -183,5 +198,50 @@ class InterfaceUserActivityTrackerTrigger
         }
         
         return false;
+    }
+    
+    /**
+     * Create the activity table if missing
+     * @return bool Success
+     */
+    private function createTableIfMissing()
+    {
+        try {
+            $sql = "CREATE TABLE IF NOT EXISTS ".$this->db->prefix()."alt_user_activity (
+                rowid INTEGER AUTO_INCREMENT PRIMARY KEY,
+                tms TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                datestamp DATETIME NULL,
+                entity INTEGER NOT NULL DEFAULT 1,
+                action VARCHAR(128) NOT NULL,
+                element_type VARCHAR(64) NULL,
+                object_id INTEGER NULL,
+                ref VARCHAR(128) NULL,
+                userid INTEGER NULL,
+                username VARCHAR(128) NULL,
+                ip VARCHAR(64) NULL,
+                payload LONGTEXT NULL,
+                severity VARCHAR(16) NULL,
+                kpi1 DECIMAL(24,6) NULL,
+                kpi2 DECIMAL(24,6) NULL,
+                note VARCHAR(255) NULL,
+                INDEX idx_action (action),
+                INDEX idx_element (element_type, object_id),
+                INDEX idx_user (userid),
+                INDEX idx_datestamp (datestamp),
+                INDEX idx_entity (entity)
+            ) ENGINE=InnoDB";
+            
+            $res = $this->db->query($sql);
+            if ($res) {
+                error_log("User Activity Tracker: Successfully created missing table");
+                return true;
+            } else {
+                error_log("User Activity Tracker: Failed to create table - " . $this->db->lasterror());
+                return false;
+            }
+        } catch (Exception $e) {
+            error_log("User Activity Tracker: Exception creating table - " . $e->getMessage());
+            return false;
+        }
     }
 }

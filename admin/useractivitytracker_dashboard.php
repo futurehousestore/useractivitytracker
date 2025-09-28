@@ -220,6 +220,56 @@ print '<div class="stat-change positive"><i class="fas fa-check-circle"></i> All
 print '</div>';
 print '</div>';
 
+/* Add diagnostic information when no data is found */
+if ($totalCount == 0) {
+    // Get diagnostics using the same class
+    require_once '../class/useractivity.class.php';
+    $activity = new UserActivity($db);
+    $diagnostics = $activity->getDiagnostics($conf->entity);
+    
+    print '<div class="card diagnostic-card" style="margin: 20px 0; border-left: 4px solid #f39c12;">';
+    print '<div class="card-header" style="background: #fff3cd; color: #856404;">';
+    print '<span><i class="fas fa-exclamation-triangle"></i> No Activity Data Found - Diagnostics</span>';
+    print '</div>';
+    print '<div class="card-body" style="background: #fefefe;">';
+    
+    if (!$diagnostics['table_exists']) {
+        print '<div class="alert alert-danger" style="padding: 15px; margin: 10px 0; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; color: #721c24;">';
+        print '<strong>❌ Critical:</strong> Database table <code>'.$db->prefix().'alt_user_activity</code> does not exist.<br>';
+        print '<strong>Solution:</strong> Disable and re-enable the User Activity Tracker module to create the table.';
+        print '</div>';
+    } else {
+        print '<div class="alert alert-info" style="padding: 15px; margin: 10px 0; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px; color: #0c5460;">';
+        print '<strong>✅ Table Status:</strong> Database table exists with '.count($diagnostics['table_columns']).' columns<br>';
+        print '<strong>📊 Recent Activity:</strong> '.$diagnostics['recent_activity_count'].' activities in the last 7 days';
+        if ($diagnostics['latest_activity']) {
+            $latest_date = dol_print_date($db->jdate($diagnostics['latest_activity']['datestamp']), 'dayhour');
+            print '<br><strong>📅 Latest Activity:</strong> '.$diagnostics['latest_activity']['action'].' by '.$diagnostics['latest_activity']['username'].' on '.$latest_date;
+        }
+        print '</div>';
+        
+        if ($diagnostics['recent_activity_count'] == 0) {
+            print '<div class="alert alert-warning" style="padding: 15px; margin: 10px 0; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; color: #856404;">';
+            print '<strong>⚠️ No Recent Activity:</strong> The module may not be tracking activities properly.<br>';
+            print '<strong>Troubleshooting:</strong>';
+            print '<ul style="margin: 5px 0 0 20px;">';
+            print '<li>Check server error logs for trigger failures</li>';
+            print '<li>Try performing actions in Dolibarr (login, create records)</li>';
+            print '<li>Verify triggers are enabled in Dolibarr configuration</li>';
+            print '</ul>';
+            print '</div>';
+        } else {
+            print '<div class="alert alert-success" style="padding: 15px; margin: 10px 0; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; color: #155724;">';
+            print '<strong>💡 Date Range Issue:</strong> Activity data exists, but not in your selected period ('.$from.' to '.$to.').<br>';
+            print '<strong>Try:</strong> Expanding the date range to include recent activity.';
+            print '</div>';
+        }
+    }
+    
+    print '</div>';
+    print '</div>';
+}
+
 /* Timeline Container (initially hidden) */
 print '<div class="timeline-container" data-section="timeline" style="display: none;">';
 print '<div class="card">';

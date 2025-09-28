@@ -138,7 +138,25 @@ $num = 0;
 if ($res) $num = $db->num_rows($res);
 
 if ($num == 0) {
-    print '<tr><td colspan="6" class="center">No activities found for the selected criteria</td></tr>';
+    print '<tr><td colspan="6" class="center">';
+    
+    // Enhanced diagnostic message
+    require_once '../class/useractivity.class.php';
+    $activity = new UserActivity($db);
+    $diagnostics = $activity->getDiagnostics($conf->entity);
+    
+    if (!$diagnostics['table_exists']) {
+        print '❌ <strong>Database table missing</strong> - Module may not be properly installed.<br>';
+        print '<small>Solution: Disable and re-enable the User Activity Tracker module</small>';
+    } elseif ($diagnostics['recent_activity_count'] == 0) {
+        print '⚠️ <strong>No activities found</strong> - Module may not be tracking activities.<br>';
+        print '<small>Check: Server logs, trigger configuration, or try performing some actions in Dolibarr</small>';
+    } else {
+        print '📅 <strong>No activities found for the selected criteria</strong><br>';
+        print '<small>Found '.$diagnostics['recent_activity_count'].' activities in last 7 days - try adjusting date range or filters</small>';
+    }
+    
+    print '</td></tr>';
 } else {
     $i = 0;
     while ($i < $num) {

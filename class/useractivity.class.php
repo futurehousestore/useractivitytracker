@@ -217,4 +217,62 @@ class UserActivity extends CommonObject
         
         return $anomalies;
     }
+    
+    /**
+     * Get module diagnostic information
+     * @param int $entity Entity ID
+     * @return array Diagnostic information
+     */
+    public function getDiagnostics($entity = 1)
+    {
+        $diagnostics = array();
+        
+        // Check table existence
+        $sql = "SHOW TABLES LIKE '".$this->db->prefix().$this->table_element."'";
+        $res = $this->db->query($sql);
+        $diagnostics['table_exists'] = ($res && $this->db->num_rows($res) > 0);
+        if ($res) $this->db->free($res);
+        
+        if ($diagnostics['table_exists']) {
+            // Check table structure
+            $sql = "DESCRIBE ".$this->db->prefix().$this->table_element;
+            $res = $this->db->query($sql);
+            $columns = array();
+            if ($res) {
+                while ($obj = $this->db->fetch_object($res)) {
+                    $columns[] = $obj->Field;
+                }
+                $this->db->free($res);
+            }
+            $diagnostics['table_columns'] = $columns;
+            
+            // Get recent activity count (last 7 days)
+            $week_ago = dol_print_date(dol_time_plus_duree(dol_now(), -7, 'd'), '%Y-%m-%d');
+            $now = dol_print_date(dol_now(), '%Y-%m-%d');
+            $sql = "SELECT COUNT(*) as total FROM ".$this->db->prefix().$this->table_element.
+                   " WHERE entity=".(int)$entity." AND datestamp BETWEEN '".$this->db->escape($week_ago)." 00:00:00' AND '".$this->db->escape($now)." 23:59:59'";
+            $res = $this->db->query($sql);
+            $diagnostics['recent_activity_count'] = 0;
+            if ($res && ($obj = $this->db->fetch_object($res))) {
+                $diagnostics['recent_activity_count'] = (int)$obj->total;
+                $this->db->free($res);
+            }
+            
+            // Get latest activity
+            $sql = "SELECT datestamp, action, username FROM ".$this->db->prefix().$this->table_element.
+                   " WHERE entity=".(int)$entity." ORDER BY datestamp DESC LIMIT 1";
+            $res = $this->db->query($sql);
+            $diagnostics['latest_activity'] = null;
+            if ($res && ($obj = $this->db->fetch_object($res))) {
+                $diagnostics['latest_activity'] = array(
+                    'datestamp' => $obj->datestamp,
+                    'action' => $obj->action,
+                    'username' => $obj->username
+                );
+                $this->db->free($res);
+            }
+        }
+        
+        return $diagnostics;
+    }
 }
