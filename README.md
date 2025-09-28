@@ -7,18 +7,27 @@
 Track user activity across Dolibarr with a comprehensive dashboard, advanced analytics, CSV/XLS export, webhook alerts, anomaly detection, and retention cleanup.
 
 ## ✨ New in v1.0.0
+- **🎨 Modern Dashboard UI**: Complete dashboard redesign with responsive cards, dark mode, and professional styling
+- **📊 Interactive Charts**: Chart.js integration with doughnut, bar, and line charts for comprehensive data visualization
+- **🔄 Real-Time Updates**: AJAX-powered live data refresh with configurable auto-refresh intervals
+- **🌙 Dark Mode**: Full theme support with localStorage persistence and smooth transitions
+- **📱 Mobile-First Design**: Responsive layout optimized for all device sizes with touch-friendly controls
+- **👥 User Comparison**: Advanced tool to compare up to 4 users with side-by-side metrics and charts
+- **🔥 Activity Heatmap**: GitHub-style heatmap visualization for activity patterns analysis
+- **📈 Trend Analysis**: Comprehensive trend charts with automated insights and recommendations
+- **⚙️ Dashboard Settings**: Customizable preferences for appearance, behavior, and data display
+- **🔍 Enhanced Filters**: Advanced search panel with element type, severity, and IP filtering
+- **📤 Modern Export**: Improved CSV/XLS export with better styling and PDF export foundation
 - **Dolibarr 22.0.0 Compatibility**: Full compatibility with Dolibarr 22.0.0 and modern PHP versions
 - **Updated APIs**: Replaced deprecated `$conf->global` with modern `getDolGlobalString()` functions
 - **Improved Installation**: Better table creation process with proper SQL file handling
 - **Top Menu Integration**: Module now appears in the main menu bar for easy access
-- **Enhanced Dashboard**: Improved analytics with visual indicators and recent activity feed  
 - **Advanced Search**: Filter activities by action, user, element type with smart search
 - **Session Tracking**: Enhanced user session monitoring and context tracking
 - **Anomaly Detection**: Built-in security monitoring for suspicious activities
 - **Improved Webhooks**: Retry logic, HMAC signatures, better error handling
 - **Better Performance**: Optimized queries and reduced payload sizes
 - **Security Enhancements**: Sensitive data filtering and improved IP detection
-- **Modern UI**: Updated interface with better organization and user experience
 
 ## Features
 - Logs all Dolibarr triggers via a single trigger class (action name, element type, IDs, user, company, IP, and payload snapshot).
