@@ -23,7 +23,7 @@ $stats = $activity->getActivityStats($from, $to, $conf->entity);
 
 // Get anomalies if enabled
 $anomalies = array();
-if (!empty($conf->global->USERACTIVITYTRACKER_ENABLE_ANOMALY)) {
+if (getDolGlobalString('USERACTIVITYTRACKER_ENABLE_ANOMALY')) {
     $anomalies = $activity->detectAnomalies($conf->entity);
 }
 
@@ -89,7 +89,7 @@ print '<div class="fichehalfright">';
 print '<table class="noborder" width="100%">';
 print '<tr class="liste_titre"><th colspan="2">Security Status</th></tr>';
 
-if (!empty($conf->global->USERACTIVITYTRACKER_ENABLE_ANOMALY)) {
+if (getDolGlobalString('USERACTIVITYTRACKER_ENABLE_ANOMALY')) {
     $anomaly_count = count($anomalies);
     $severity_style = $anomaly_count > 0 ? 'color: #d63031; font-weight: bold;' : 'color: #00b894; font-weight: bold;';
     print '<tr><td>Anomalies Detected</td><td class="right"><span style="'.$severity_style.'">'.$anomaly_count.'</span></td></tr>';
@@ -174,15 +174,15 @@ if ($stats['total'] == 0) {
         print '<li>Consider expanding user adoption - only '.count($stats['by_user']).' users active in this period.</li>';
     }
     
-    if (!empty($conf->global->USERACTIVITYTRACKER_ENABLE_ANOMALY) && !empty($anomalies)) {
+    if (getDolGlobalString('USERACTIVITYTRACKER_ENABLE_ANOMALY') && !empty($anomalies)) {
         print '<li><strong>Security Alert:</strong> '.count($anomalies).' anomalies detected. Review the security section above.</li>';
     }
     
-    if (empty($conf->global->USERACTIVITYTRACKER_WEBHOOK_URL)) {
+    if (!getDolGlobalString('USERACTIVITYTRACKER_WEBHOOK_URL')) {
         print '<li>Consider setting up webhook notifications for real-time activity monitoring.</li>';
     }
     
-    $retention_days = (int)($conf->global->USERACTIVITYTRACKER_RETENTION_DAYS ?: 365);
+    $retention_days = getDolGlobalInt('USERACTIVITYTRACKER_RETENTION_DAYS', 365);
     if ($retention_days > 90) {
         print '<li>Your retention period is '.$retention_days.' days. Consider reducing it for better performance.</li>';
     }

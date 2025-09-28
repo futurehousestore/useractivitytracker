@@ -33,7 +33,8 @@ class modUserActivityTracker extends DolibarrModules
 
         $this->config_page_url = array('useractivitytracker_setup.php@useractivitytracker');
         $this->depends = array(); // core only
-        $this->phpmin = array(7, 4); // Changed to PHP 7.4 as per requirement
+        $this->phpmin = array(7, 4); // PHP 7.4+ required
+        $this->need_dolibarr_version = array(14, 0); // Dolibarr 14.0+ required (tested up to 22.0.0)
         $this->langfiles = array('useractivitytracker@useractivitytracker');
 
         $this->const = array(
@@ -169,8 +170,12 @@ class modUserActivityTracker extends DolibarrModules
 
     public function init($options = '')
     {
-        // Use the parent method to execute table creation from SQL files
-        return $this->_load_tables('/useractivitytracker/sql/', '');
+        // Load tables, keys and data required by module
+        $result = $this->_load_tables('/useractivitytracker/sql/', '');
+        if ($result <= 0) {
+            return -1;
+        }
+        return $result;
     }
 
     public function remove($options = '')
@@ -191,36 +196,67 @@ class modUserActivityTracker extends DolibarrModules
      */
     protected function _load_tables($reldir, $onlywithsuffix = '')
     {
-        // Execute custom SQL directly
-        $sql = array();
-        $sql[] = "CREATE TABLE IF NOT EXISTS " . MAIN_DB_PREFIX . "alt_user_activity (
-            rowid INTEGER AUTO_INCREMENT PRIMARY KEY,
-            tms TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            datestamp DATETIME NULL,
-            entity INTEGER NOT NULL DEFAULT 1,
-            action VARCHAR(128) NOT NULL,
-            element_type VARCHAR(64) NULL,
-            object_id INTEGER NULL,
-            ref VARCHAR(128) NULL,
-            userid INTEGER NULL,
-            username VARCHAR(128) NULL,
-            ip VARCHAR(64) NULL,
-            payload LONGTEXT NULL,
-            severity VARCHAR(16) NULL,
-            kpi1 DECIMAL(24,6) NULL,
-            kpi2 DECIMAL(24,6) NULL,
-            note VARCHAR(255) NULL,
-            INDEX idx_action (action),
-            INDEX idx_element (element_type, object_id),
-            INDEX idx_user (userid),
-            INDEX idx_datestamp (datestamp),
-            INDEX idx_entity (entity)
-        ) ENGINE=InnoDB;";
+        global $conf;
         
+        // Use parent method to load SQL files properly
         $error = 0;
-        foreach ($sql as $query) {
-            $res = $this->db->query($query);
-            if (!$res) {
+        $sql_dir = DOL_DOCUMENT_ROOT . '/custom' . $reldir;
+        
+        if (is_dir($sql_dir)) {
+            $handle = opendir($sql_dir);
+            if ($handle) {
+                while (($file = readdir($handle)) !== false) {
+                    if (is_file($sql_dir . $file) && preg_match('/\.sql$/i', $file)) {
+                        $sql_content = file_get_contents($sql_dir . $file);
+                        if ($sql_content) {
+                            // Replace llx_ with actual prefix
+                            $sql_content = str_replace('llx_', MAIN_DB_PREFIX, $sql_content);
+                            
+                            // Split multiple statements if any
+                            $statements = array_filter(array_map('trim', explode(';', $sql_content)));
+                            
+                            foreach ($statements as $statement) {
+                                if (!empty($statement)) {
+                                    $result = $this->db->query($statement);
+                                    if (!$result) {
+                                        $error++;
+                                        dol_syslog("Error executing SQL: " . $this->db->lasterror(), LOG_ERR);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                closedir($handle);
+            }
+        } else {
+            // Fallback to embedded SQL if directory doesn't exist
+            $sql = "CREATE TABLE IF NOT EXISTS " . MAIN_DB_PREFIX . "alt_user_activity (
+                rowid INTEGER AUTO_INCREMENT PRIMARY KEY,
+                tms TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                datestamp DATETIME NULL,
+                entity INTEGER NOT NULL DEFAULT 1,
+                action VARCHAR(128) NOT NULL,
+                element_type VARCHAR(64) NULL,
+                object_id INTEGER NULL,
+                ref VARCHAR(128) NULL,
+                userid INTEGER NULL,
+                username VARCHAR(128) NULL,
+                ip VARCHAR(64) NULL,
+                payload LONGTEXT NULL,
+                severity VARCHAR(16) NULL,
+                kpi1 DECIMAL(24,6) NULL,
+                kpi2 DECIMAL(24,6) NULL,
+                note VARCHAR(255) NULL,
+                INDEX idx_action (action),
+                INDEX idx_element (element_type, object_id),
+                INDEX idx_user (userid),
+                INDEX idx_datestamp (datestamp),
+                INDEX idx_entity (entity)
+            ) ENGINE=InnoDB";
+            
+            $result = $this->db->query($sql);
+            if (!$result) {
                 $error++;
             }
         }

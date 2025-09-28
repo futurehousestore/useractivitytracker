@@ -27,9 +27,9 @@ if ($action=='save')
     dolibarr_set_const($db, 'USERACTIVITYTRACKER_MAX_PAYLOAD_SIZE', max(1024,(int)GETPOST('max_payload_size','int')), 'chaine', 0, '', $conf->entity);
     setEventMessage('Settings saved successfully');
 }
-elseif ($action=='testwebhook' && ! empty($conf->global->USERACTIVITYTRACKER_WEBHOOK_URL))
+elseif ($action=='testwebhook' && getDolGlobalString('USERACTIVITYTRACKER_WEBHOOK_URL'))
 {
-    $url = $conf->global->USERACTIVITYTRACKER_WEBHOOK_URL;
+    $url = getDolGlobalString('USERACTIVITYTRACKER_WEBHOOK_URL');
     $data = json_encode(array(
         'test' => true,
         'message' => 'Test webhook from User Activity Tracker',
@@ -42,9 +42,10 @@ elseif ($action=='testwebhook' && ! empty($conf->global->USERACTIVITYTRACKER_WEB
         $ch = curl_init($url);
         $headers = array('Content-Type: application/json');
         
-        if (!empty($conf->global->USERACTIVITYTRACKER_WEBHOOK_SECRET)) {
-            $signature = hash_hmac('sha256', $data, $conf->global->USERACTIVITYTRACKER_WEBHOOK_SECRET);
-            $headers[] = 'X-Webhook-Secret: '.$conf->global->USERACTIVITYTRACKER_WEBHOOK_SECRET;
+        if (getDolGlobalString('USERACTIVITYTRACKER_WEBHOOK_SECRET')) {
+            $secret = getDolGlobalString('USERACTIVITYTRACKER_WEBHOOK_SECRET');
+            $signature = hash_hmac('sha256', $data, $secret);
+            $headers[] = 'X-Webhook-Secret: '.$secret;
             $headers[] = 'X-Hub-Signature-256: sha256='.$signature;
         }
         
@@ -72,13 +73,13 @@ elseif ($action=='testwebhook' && ! empty($conf->global->USERACTIVITYTRACKER_WEB
 elseif ($action=='cleanup')
 {
     $activity = new UserActivity($db);
-    $retention_days = (int)($conf->global->USERACTIVITYTRACKER_RETENTION_DAYS ?: 365);
+    $retention_days = getDolGlobalInt('USERACTIVITYTRACKER_RETENTION_DAYS', 365);
     $deleted = $activity->cleanOldActivities($retention_days, $conf->entity);
     setEventMessage('Cleanup completed: '.$deleted.' records deleted');
 }
 elseif ($action=='analyze_anomalies')
 {
-    if (!empty($conf->global->USERACTIVITYTRACKER_ENABLE_ANOMALY)) {
+    if (getDolGlobalString('USERACTIVITYTRACKER_ENABLE_ANOMALY')) {
         $activity = new UserActivity($db);
         $anomalies = $activity->detectAnomalies($conf->entity);
         
@@ -97,7 +98,7 @@ elseif ($action=='analyze_anomalies')
 }
 
 // Opportunistic retention cleanup
-$days = (int)($conf->global->USERACTIVITYTRACKER_RETENTION_DAYS ?: 365);
+$days = getDolGlobalInt('USERACTIVITYTRACKER_RETENTION_DAYS', 365);
 $db->query("DELETE FROM ".$db->prefix()."alt_user_activity WHERE datestamp < DATE_SUB(NOW(), INTERVAL ".((int)$days)." DAY) AND entity=".(int)$conf->entity);
 
 llxHeader('', 'User Activity Tracker — Settings');
@@ -108,16 +109,16 @@ print '<input type="hidden" name="action" value="save">';
 print '<table class="noborder" width="100%">';
 print '<tr class="liste_titre"><td colspan="2">General Settings</td></tr>';
 print '<tr><td width="300">Retention (days)</td><td><input type="number" name="retention" min="1" value="'.dol_escape_htmltag($days).'"> <em>How long to keep activity data</em></td></tr>';
-print '<tr><td>Enable session tracking</td><td><input type="checkbox" name="session_tracking" '.(!empty($conf->global->USERACTIVITYTRACKER_ENABLE_SESSION_TRACKING)?'checked':'').'> <em>Track user sessions and enhanced context</em></td></tr>';
-print '<tr><td>Skip sensitive data</td><td><input type="checkbox" name="skip_sensitive" '.(!empty($conf->global->USERACTIVITYTRACKER_SKIP_SENSITIVE_DATA)?'checked':'').'> <em>Filter passwords and tokens from payload</em></td></tr>';
-print '<tr><td>Max payload size (bytes)</td><td><input type="number" name="max_payload_size" min="1024" value="'.dol_escape_htmltag($conf->global->USERACTIVITYTRACKER_MAX_PAYLOAD_SIZE ?: 65536).'"> <em>Maximum size of JSON payload</em></td></tr>';
+print '<tr><td>Enable session tracking</td><td><input type="checkbox" name="session_tracking" '.(getDolGlobalString('USERACTIVITYTRACKER_ENABLE_SESSION_TRACKING')?'checked':'').'> <em>Track user sessions and enhanced context</em></td></tr>';
+print '<tr><td>Skip sensitive data</td><td><input type="checkbox" name="skip_sensitive" '.(getDolGlobalString('USERACTIVITYTRACKER_SKIP_SENSITIVE_DATA')?'checked':'').'> <em>Filter passwords and tokens from payload</em></td></tr>';
+print '<tr><td>Max payload size (bytes)</td><td><input type="number" name="max_payload_size" min="1024" value="'.dol_escape_htmltag(getDolGlobalInt('USERACTIVITYTRACKER_MAX_PAYLOAD_SIZE', 65536)).'"> <em>Maximum size of JSON payload</em></td></tr>';
 
 print '<tr class="liste_titre"><td colspan="2">Webhook Settings</td></tr>';
-print '<tr><td>Webhook URL</td><td><input type="url" name="webhook" size="80" placeholder="https://your-webhook-endpoint.com/webhook" value="'.dol_escape_htmltag($conf->global->USERACTIVITYTRACKER_WEBHOOK_URL).'"></td></tr>';
-print '<tr><td>Webhook Secret</td><td><input type="text" name="secret" size="40" placeholder="Optional secret for HMAC signature" value="'.dol_escape_htmltag($conf->global->USERACTIVITYTRACKER_WEBHOOK_SECRET).'"></td></tr>';
+print '<tr><td>Webhook URL</td><td><input type="url" name="webhook" size="80" placeholder="https://your-webhook-endpoint.com/webhook" value="'.dol_escape_htmltag(getDolGlobalString('USERACTIVITYTRACKER_WEBHOOK_URL')).'"></td></tr>';
+print '<tr><td>Webhook Secret</td><td><input type="text" name="secret" size="40" placeholder="Optional secret for HMAC signature" value="'.dol_escape_htmltag(getDolGlobalString('USERACTIVITYTRACKER_WEBHOOK_SECRET')).'"></td></tr>';
 
 print '<tr class="liste_titre"><td colspan="2">Security & Monitoring</td></tr>';
-print '<tr><td>Enable anomaly detection</td><td><input type="checkbox" name="anomaly" '.(!empty($conf->global->USERACTIVITYTRACKER_ENABLE_ANOMALY)?'checked':'').'> <em>Detect suspicious activity patterns</em></td></tr>';
+print '<tr><td>Enable anomaly detection</td><td><input type="checkbox" name="anomaly" '.(getDolGlobalString('USERACTIVITYTRACKER_ENABLE_ANOMALY')?'checked':'').'> <em>Detect suspicious activity patterns</em></td></tr>';
 
 print '</table>';
 print '<div class="center" style="margin: 20px 0;">';
@@ -128,7 +129,7 @@ print '</form>';
 // Action buttons
 print '<div class="center">';
 print '<form method="post" style="display: inline-block; margin: 0 10px;"><input type="hidden" name="action" value="testwebhook">';
-print '<input type="submit" class="button" value="Test Webhook"'.(!empty($conf->global->USERACTIVITYTRACKER_WEBHOOK_URL)?'':' disabled title="Configure webhook URL first"').'>';
+print '<input type="submit" class="button" value="Test Webhook"'.(getDolGlobalString('USERACTIVITYTRACKER_WEBHOOK_URL')?'':' disabled title="Configure webhook URL first"').'>';
 print '</form>';
 
 print '<form method="post" style="display: inline-block; margin: 0 10px;"><input type="hidden" name="action" value="cleanup">';
@@ -136,7 +137,7 @@ print '<input type="submit" class="button" value="Manual Cleanup" onclick="retur
 print '</form>';
 
 print '<form method="post" style="display: inline-block; margin: 0 10px;"><input type="hidden" name="action" value="analyze_anomalies">';
-print '<input type="submit" class="button" value="Analyze Anomalies"'.(!empty($conf->global->USERACTIVITYTRACKER_ENABLE_ANOMALY)?'':' disabled title="Enable anomaly detection first"').'>';
+print '<input type="submit" class="button" value="Analyze Anomalies"'.(getDolGlobalString('USERACTIVITYTRACKER_ENABLE_ANOMALY')?'':' disabled title="Enable anomaly detection first"').'>';
 print '</form>';
 print '</div>';
 
