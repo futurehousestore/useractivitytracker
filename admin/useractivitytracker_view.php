@@ -2,7 +2,7 @@
 /**
  * Activity Details Viewer
  * Path: custom/useractivitytracker/admin/useractivitytracker_view.php
- * Version: 1.0.0
+ * Version: 2.0.0
  */
 require '../../main.inc.php';
 require_once '../class/useractivity.class.php';
@@ -56,7 +56,7 @@ if ($activity->payload) {
     $payload_data = json_decode($activity->payload, true);
     
     print '<br><table class="noborder" width="100%">';
-    print '<tr class="liste_titre"><th>Payload Data</th></tr>';
+    print '<tr class="liste_titre"><th><i class="fas fa-database"></i> Payload Data</th></tr>';
     print '<tr><td>';
     
     if (is_array($payload_data)) {
@@ -95,8 +95,8 @@ if ($related_res) {
 
 if (!empty($related_activities)) {
     print '<br><table class="noborder" width="100%">';
-    print '<tr class="liste_titre"><th colspan="4">Related Activities (±1 hour)</th></tr>';
-    print '<tr class="liste_titre"><th>Time</th><th>Action</th><th>Element</th><th>Ref</th></tr>';
+    print '<tr class="liste_titre"><th colspan="4"><i class="fas fa-history"></i> Related Activities (±1 hour)</th></tr>';
+    print '<tr class="liste_titre"><th><i class="fas fa-clock"></i> Time</th><th><i class="fas fa-bolt"></i> Action</th><th><i class="fas fa-cube"></i> Element</th><th><i class="fas fa-tag"></i> Ref</th></tr>';
     
     foreach ($related_activities as $rel) {
         print '<tr>';

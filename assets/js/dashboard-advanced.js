@@ -1,6 +1,6 @@
 /**
  * Advanced Dashboard Features for User Activity Tracker
- * Version: 1.0.0
+ * Version: 2.0.0
  * Features: User comparison, heatmaps, trends analysis
  */
 

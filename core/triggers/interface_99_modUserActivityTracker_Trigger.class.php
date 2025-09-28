@@ -3,13 +3,13 @@
 /**
  * Universal logger trigger for User Activity Tracker
  * Path: custom/useractivitytracker/core/triggers/interface_99_modUserActivityTracker_Trigger.class.php
- * Version: 1.0.0
+ * Version: 2.0.0
  */
 class InterfaceUserActivityTrackerTrigger
 {
     public $family = 'user';
     public $description = 'Logs Dolibarr triggers into alt_user_activity';
-    public $version = '1.0.0';
+    public $version = '2.0.0';
     public $name = 'InterfaceUserActivityTrackerTrigger';
     public $picto = 'useractivitytracker@useractivitytracker';
 
@@ -138,7 +138,7 @@ class InterfaceUserActivityTrackerTrigger
         $headers = array(
             'Content-Type: application/json',
             'Content-Length: '.strlen($payload),
-            'User-Agent: Dolibarr-UserActivityTracker/1.0.0'
+            'User-Agent: Dolibarr-UserActivityTracker/2.0.0'
         );
         
         if ($secret) { 
