@@ -1,12 +1,25 @@
 # User Activity Tracker (Dolibarr Module)
 
-**Version:** 2.0.0
+**Version:** 2.2.0
 **Compatibility:** Dolibarr 14.0+ to 22.0.0+, PHP 7.4+
 **Namespace/Dir:** `custom/useractivitytracker`
 
 Track user activity across Dolibarr with a comprehensive dashboard, advanced analytics, CSV/XLS export, webhook alerts, anomaly detection, and retention cleanup.
 
-## ✨ New in v2.0.0
+## ✨ New in v2.2.0 
+
+- **🎨 Enhanced Dashboard UI**: Completely redesigned with modern card layouts, improved spacing, and better visual hierarchy
+- **🧭 Advanced Navigation**: New sidebar navigation system with breadcrumbs and quick action buttons
+- **📊 Timeline Visualization**: Interactive activity timeline with filtering and real-time updates
+- **📄 Complete PDF Export**: Full PDF export functionality replacing previous placeholder implementation  
+- **🔍 Smart Quick Filters**: Predefined date ranges and action type filters with intuitive interface
+- **🎯 Drag & Drop Widgets**: Rearrangeable dashboard components with persistent layout saving
+- **🎭 Enhanced Animations**: Smooth transitions, staggered loading effects, and improved user feedback
+- **📱 Mobile First**: Completely responsive design with optimized mobile navigation
+- **⚡ Performance Optimized**: Refactored JavaScript and CSS for faster loading and better efficiency
+- **🌓 Enhanced Themes**: Improved dark/light mode with better color schemes and transitions
+
+## ✨ Previous Features (v2.0.0)
 - **🎨 Enhanced Modern UI**: Professional Font Awesome icons throughout all admin pages for improved visual appeal and intuitive navigation
 - **📊 Interactive Charts**: Chart.js integration with doughnut, bar, and line charts for comprehensive data visualization
 - **🔄 Real-Time Updates**: AJAX-powered live data refresh with configurable auto-refresh intervals

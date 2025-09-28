@@ -1,7 +1,8 @@
 /**
  * Modern Dashboard JavaScript for User Activity Tracker
- * Version: 2.0.0
- * Features: Dark mode, AJAX refresh, charts, pagination, and more
+ * Version: 2.2.0
+ * Features: Dark mode, AJAX refresh, charts, pagination, sidebar navigation,
+ * timeline visualization, PDF export, drag-and-drop widgets, and more
  */
 
 class UserActivityDashboard {
@@ -10,6 +11,8 @@ class UserActivityDashboard {
         this.refreshInterval = null;
         this.currentPage = 1;
         this.itemsPerPage = 10;
+        this.sidebarOpen = false;
+        this.widgetLayout = this.loadWidgetLayout();
         
         this.init();
     }
@@ -21,10 +24,669 @@ class UserActivityDashboard {
         this.setupPagination();
         this.setupFilters();
         this.setupExport();
+        this.setupNavigation();
+        this.setupTimeline();
+        this.setupDragAndDrop();
+        this.setupQuickFilters();
         this.loadSavedPreferences();
+        this.initializeAnimations();
+    }
+
+    // ============================================
+    // ENHANCED NAVIGATION SYSTEM
+    // ============================================
+    
+    setupNavigation() {
+        this.setupSidebar();
+        this.setupBreadcrumbs();
+        this.setupQuickActions();
+    }
+
+    setupSidebar() {
+        // Create sidebar if it doesn't exist
+        if (!document.querySelector('.dashboard-sidebar')) {
+            this.createSidebar();
+        }
+
+        // Mobile toggle button
+        const mobileToggle = document.querySelector('.mobile-nav-toggle') || this.createMobileToggle();
+        mobileToggle.addEventListener('click', () => {
+            this.toggleSidebar();
+        });
+
+        // Sidebar toggle button
+        const sidebarToggle = document.querySelector('.sidebar-toggle');
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', () => {
+                this.toggleSidebar();
+            });
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                this.showSidebar();
+            } else {
+                this.hideSidebar();
+            }
+        });
+    }
+
+    createSidebar() {
+        const sidebar = document.createElement('div');
+        sidebar.className = 'dashboard-sidebar';
+        sidebar.innerHTML = `
+            <div class="sidebar-header">
+                <a href="#" class="sidebar-brand">
+                    <i class="fas fa-chart-bar"></i>
+                    Activity Tracker
+                </a>
+                <button class="sidebar-toggle">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <ul class="sidebar-nav">
+                <li class="nav-item">
+                    <a href="#dashboard" class="nav-link active">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span class="nav-text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#timeline" class="nav-link">
+                        <i class="fas fa-timeline"></i>
+                        <span class="nav-text">Timeline</span>
+                        <span class="nav-badge">New</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#analytics" class="nav-link">
+                        <i class="fas fa-chart-pie"></i>
+                        <span class="nav-text">Analytics</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#users" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        <span class="nav-text">Users</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#settings" class="nav-link">
+                        <i class="fas fa-cogs"></i>
+                        <span class="nav-text">Settings</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#export" class="nav-link">
+                        <i class="fas fa-download"></i>
+                        <span class="nav-text">Export Data</span>
+                    </a>
+                </li>
+            </ul>
+        `;
+        document.body.insertBefore(sidebar, document.body.firstChild);
+
+        // Add navigation event listeners
+        this.setupSidebarNavigation(sidebar);
+    }
+
+    setupSidebarNavigation(sidebar) {
+        const navLinks = sidebar.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                // Update active state
+                navLinks.forEach(nl => nl.classList.remove('active'));
+                link.classList.add('active');
+                
+                // Handle navigation
+                const href = link.getAttribute('href');
+                this.navigateToSection(href.substring(1));
+                
+                // Close sidebar on mobile
+                if (window.innerWidth <= 768) {
+                    this.hideSidebar();
+                }
+            });
+        });
+    }
+
+    createMobileToggle() {
+        const toggle = document.createElement('button');
+        toggle.className = 'mobile-nav-toggle';
+        toggle.innerHTML = '<i class="fas fa-bars"></i>';
+        document.body.appendChild(toggle);
+        return toggle;
+    }
+
+    toggleSidebar() {
+        this.sidebarOpen ? this.hideSidebar() : this.showSidebar();
+    }
+
+    showSidebar() {
+        const sidebar = document.querySelector('.dashboard-sidebar');
+        const content = document.querySelector('.dashboard-content');
+        
+        if (sidebar) {
+            sidebar.classList.add('show');
+            this.sidebarOpen = true;
+        }
+        
+        if (content && window.innerWidth > 768) {
+            content.classList.add('sidebar-open');
+        }
+    }
+
+    hideSidebar() {
+        const sidebar = document.querySelector('.dashboard-sidebar');
+        const content = document.querySelector('.dashboard-content');
+        
+        if (sidebar) {
+            sidebar.classList.remove('show');
+            this.sidebarOpen = false;
+        }
+        
+        if (content) {
+            content.classList.remove('sidebar-open');
+        }
+    }
+
+    setupBreadcrumbs() {
+        if (!document.querySelector('.breadcrumb-container')) {
+            this.createBreadcrumbs();
+        }
+    }
+
+    createBreadcrumbs() {
+        const breadcrumbHTML = `
+            <div class="breadcrumb-container">
+                <nav>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="#dashboard">
+                                <i class="fas fa-home"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active">Overview</li>
+                    </ol>
+                </nav>
+            </div>
+        `;
+        
+        const container = document.querySelector('.dashboard-content') || document.querySelector('.dashboard-container');
+        if (container) {
+            container.insertAdjacentHTML('afterbegin', breadcrumbHTML);
+        }
+    }
+
+    updateBreadcrumbs(path) {
+        const breadcrumb = document.querySelector('.breadcrumb');
+        if (breadcrumb) {
+            const pathParts = path.split('/').filter(part => part);
+            let breadcrumbHTML = `
+                <li class="breadcrumb-item">
+                    <a href="#dashboard">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                </li>
+            `;
+            
+            pathParts.forEach((part, index) => {
+                const isLast = index === pathParts.length - 1;
+                const formattedPart = part.charAt(0).toUpperCase() + part.slice(1);
+                
+                if (isLast) {
+                    breadcrumbHTML += `<li class="breadcrumb-item active">${formattedPart}</li>`;
+                } else {
+                    breadcrumbHTML += `
+                        <li class="breadcrumb-item">
+                            <a href="#${pathParts.slice(0, index + 1).join('/')}">${formattedPart}</a>
+                        </li>
+                    `;
+                }
+            });
+            
+            breadcrumb.innerHTML = breadcrumbHTML;
+        }
+    }
+
+    setupQuickActions() {
+        if (!document.querySelector('.quick-actions')) {
+            this.createQuickActions();
+        }
+    }
+
+    createQuickActions() {
+        const quickActionsHTML = `
+            <div class="quick-actions">
+                <a href="#" class="quick-action-btn" data-action="refresh">
+                    <i class="fas fa-sync-alt"></i>
+                    <span class="action-label">Refresh Data</span>
+                </a>
+                <a href="#" class="quick-action-btn" data-action="export">
+                    <i class="fas fa-file-pdf"></i>
+                    <span class="action-label">Export PDF</span>
+                </a>
+                <a href="#" class="quick-action-btn" data-action="timeline">
+                    <i class="fas fa-timeline"></i>
+                    <span class="action-label">View Timeline</span>
+                </a>
+                <a href="#" class="quick-action-btn" data-action="settings">
+                    <i class="fas fa-cogs"></i>
+                    <span class="action-label">Dashboard Settings</span>
+                </a>
+            </div>
+        `;
+        
+        const container = document.querySelector('.dashboard-content') || document.querySelector('.dashboard-container');
+        if (container) {
+            const breadcrumbContainer = container.querySelector('.breadcrumb-container');
+            if (breadcrumbContainer) {
+                breadcrumbContainer.insertAdjacentHTML('afterend', quickActionsHTML);
+            } else {
+                container.insertAdjacentHTML('afterbegin', quickActionsHTML);
+            }
+        }
+
+        // Add event listeners for quick actions
+        document.querySelectorAll('.quick-action-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const action = btn.dataset.action;
+                this.handleQuickAction(action);
+            });
+        });
+    }
+
+    handleQuickAction(action) {
+        switch (action) {
+            case 'refresh':
+                this.refreshData();
+                break;
+            case 'export':
+                this.exportToPDF();
+                break;
+            case 'timeline':
+                this.navigateToSection('timeline');
+                break;
+            case 'settings':
+                this.showDashboardSettings();
+                break;
+        }
+    }
+
+    navigateToSection(section) {
+        this.updateBreadcrumbs(section);
+        
+        // Hide all sections
+        document.querySelectorAll('[data-section]').forEach(el => {
+            el.style.display = 'none';
+        });
+        
+        // Show target section
+        const targetSection = document.querySelector(`[data-section="${section}"]`);
+        if (targetSection) {
+            targetSection.style.display = 'block';
+            targetSection.classList.add('fade-in-up');
+        }
     }
     
-    // Theme Management
+    // ============================================
+    // USER ACTIVITY TIMELINE
+    // ============================================
+
+    setupTimeline() {
+        this.createTimelineContainer();
+        this.loadTimelineData();
+    }
+
+    createTimelineContainer() {
+        if (!document.querySelector('.timeline-container')) {
+            const timelineHTML = `
+                <div class="timeline-container" data-section="timeline" style="display: none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <span><i class="fas fa-timeline"></i> Activity Timeline</span>
+                            <div class="card-tools">
+                                <button class="card-tool" onclick="dashboard.refreshTimeline()">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                                <button class="card-tool" onclick="dashboard.toggleTimelineView()">
+                                    <i class="fas fa-expand-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="timeline-filters mb-3">
+                                <div class="quick-filters">
+                                    <button class="quick-filter-btn active" data-range="today">Today</button>
+                                    <button class="quick-filter-btn" data-range="week">This Week</button>
+                                    <button class="quick-filter-btn" data-range="month">This Month</button>
+                                    <button class="quick-filter-btn" data-range="all">All Time</button>
+                                </div>
+                            </div>
+                            <div class="activity-timeline" id="activityTimeline">
+                                <div class="timeline-loading">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    Loading timeline data...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const container = document.querySelector('.dashboard-content') || document.querySelector('.dashboard-container');
+            if (container) {
+                container.insertAdjacentHTML('beforeend', timelineHTML);
+            }
+
+            // Add event listeners for timeline filters
+            document.querySelectorAll('.timeline-filters .quick-filter-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.timeline-filters .quick-filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    this.loadTimelineData(btn.dataset.range);
+                });
+            });
+        }
+    }
+
+    loadTimelineData(range = 'today') {
+        const timeline = document.getElementById('activityTimeline');
+        if (!timeline) return;
+
+        timeline.innerHTML = '<div class="timeline-loading"><i class="fas fa-spinner fa-spin"></i> Loading timeline data...</div>';
+
+        // Simulate API call for timeline data
+        setTimeout(() => {
+            const timelineData = this.generateTimelineData(range);
+            this.renderTimeline(timelineData);
+        }, 800);
+    }
+
+    generateTimelineData(range) {
+        const activities = [
+            {
+                id: 1,
+                action: 'User Login',
+                user: 'admin',
+                time: '2024-01-15 14:30:00',
+                type: 'success',
+                details: 'Successful login from IP 192.168.1.100',
+                element: 'Authentication',
+                severity: 'info'
+            },
+            {
+                id: 2,
+                action: 'Company Created',
+                user: 'john.doe',
+                time: '2024-01-15 14:25:00',
+                type: 'success',
+                details: 'New company "Acme Corp" created with ID #1234',
+                element: 'Company',
+                severity: 'info'
+            },
+            {
+                id: 3,
+                action: 'Failed Login Attempt',
+                user: 'unknown_user',
+                time: '2024-01-15 14:20:00',
+                type: 'warning',
+                details: 'Multiple failed login attempts detected from IP 192.168.1.200',
+                element: 'Authentication',
+                severity: 'warning'
+            },
+            {
+                id: 4,
+                action: 'Data Export',
+                user: 'mary.smith',
+                time: '2024-01-15 14:15:00',
+                type: 'info',
+                details: 'Customer data exported to CSV format',
+                element: 'Export',
+                severity: 'info'
+            },
+            {
+                id: 5,
+                action: 'System Error',
+                user: 'system',
+                time: '2024-01-15 14:10:00',
+                type: 'danger',
+                details: 'Database connection timeout occurred',
+                element: 'System',
+                severity: 'error'
+            }
+        ];
+
+        return activities;
+    }
+
+    renderTimeline(activities) {
+        const timeline = document.getElementById('activityTimeline');
+        if (!timeline) return;
+
+        let timelineHTML = '';
+        
+        activities.forEach((activity, index) => {
+            const timeFormatted = new Date(activity.time).toLocaleString();
+            timelineHTML += `
+                <div class="timeline-item ${activity.type} fade-in-up stagger-${(index % 4) + 1}">
+                    <div class="timeline-content">
+                        <div class="timeline-header">
+                            <span class="timeline-action">${activity.action}</span>
+                            <span class="timeline-time">
+                                <i class="fas fa-clock"></i>
+                                ${timeFormatted}
+                            </span>
+                        </div>
+                        <div class="timeline-details">${activity.details}</div>
+                        <div class="timeline-meta">
+                            <span><i class="fas fa-user"></i> ${activity.user}</span>
+                            <span><i class="fas fa-tag"></i> ${activity.element}</span>
+                            <span class="severity-${activity.severity}">
+                                <i class="fas fa-info-circle"></i> ${activity.severity.toUpperCase()}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        timeline.innerHTML = timelineHTML || '<div class="text-center text-muted">No activities found for the selected period.</div>';
+    }
+
+    refreshTimeline() {
+        const activeFilter = document.querySelector('.timeline-filters .quick-filter-btn.active');
+        const range = activeFilter ? activeFilter.dataset.range : 'today';
+        this.loadTimelineData(range);
+        this.showNotification('Timeline refreshed successfully', 'success');
+    }
+
+    toggleTimelineView() {
+        const timeline = document.querySelector('.timeline-container');
+        if (timeline) {
+            timeline.classList.toggle('fullscreen');
+            this.showNotification('Timeline view toggled', 'info');
+        }
+    }
+
+    // ============================================
+    // ENHANCED PDF EXPORT FUNCTIONALITY
+    // ============================================
+
+    setupExport() {
+        const exportBtn = document.getElementById('exportPDF');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                this.exportToPDF();
+            });
+        }
+
+        // Add PDF export library if not already loaded
+        if (typeof window.jsPDF === 'undefined') {
+            this.loadPDFLibrary();
+        }
+    }
+
+    loadPDFLibrary() {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        script.onload = () => {
+            console.log('jsPDF library loaded successfully');
+        };
+        document.head.appendChild(script);
+    }
+
+    exportToPDF() {
+        if (typeof window.jsPDF === 'undefined') {
+            this.showNotification('PDF export library is loading. Please try again in a moment.', 'warning');
+            this.loadPDFLibrary();
+            return;
+        }
+
+        this.showNotification('Generating PDF export...', 'info');
+        
+        try {
+            const { jsPDF } = window.jsPDF;
+            const pdf = new jsPDF();
+            
+            // Document header
+            pdf.setFontSize(20);
+            pdf.setFont(undefined, 'bold');
+            pdf.text('User Activity Dashboard Report', 20, 20);
+            
+            pdf.setFontSize(12);
+            pdf.setFont(undefined, 'normal');
+            pdf.text(`Generated on: ${new Date().toLocaleString()}`, 20, 30);
+            
+            // Add stats summary
+            this.addStatsToReport(pdf, 50);
+            
+            // Add recent activities
+            this.addActivitiesToReport(pdf, 90);
+            
+            // Add charts (if available)
+            this.addChartsToReport(pdf, 150);
+            
+            // Save the PDF
+            const filename = `activity-report-${new Date().toISOString().split('T')[0]}.pdf`;
+            pdf.save(filename);
+            
+            this.showNotification('PDF export completed successfully!', 'success');
+        } catch (error) {
+            console.error('PDF export error:', error);
+            this.showNotification('Error generating PDF export. Please try again.', 'error');
+        }
+    }
+
+    addStatsToReport(pdf, startY) {
+        pdf.setFontSize(16);
+        pdf.setFont(undefined, 'bold');
+        pdf.text('Dashboard Statistics', 20, startY);
+        
+        const stats = this.extractDashboardStats();
+        let currentY = startY + 10;
+        
+        pdf.setFontSize(10);
+        pdf.setFont(undefined, 'normal');
+        
+        stats.forEach(stat => {
+            pdf.text(`${stat.label}: ${stat.value}`, 25, currentY);
+            currentY += 8;
+        });
+    }
+
+    addActivitiesToReport(pdf, startY) {
+        pdf.setFontSize(16);
+        pdf.setFont(undefined, 'bold');
+        pdf.text('Recent Activities', 20, startY);
+        
+        const activities = this.extractRecentActivities();
+        let currentY = startY + 10;
+        
+        pdf.setFontSize(8);
+        pdf.setFont(undefined, 'normal');
+        
+        activities.forEach(activity => {
+            if (currentY > 270) {
+                pdf.addPage();
+                currentY = 20;
+            }
+            
+            pdf.text(`${activity.time} - ${activity.action} (${activity.user})`, 25, currentY);
+            currentY += 6;
+            
+            if (activity.details) {
+                pdf.setFont(undefined, 'italic');
+                pdf.text(`   ${activity.details}`, 25, currentY);
+                pdf.setFont(undefined, 'normal');
+                currentY += 6;
+            }
+            currentY += 2;
+        });
+    }
+
+    addChartsToReport(pdf, startY) {
+        // Try to capture chart images and add them to PDF
+        const charts = document.querySelectorAll('canvas');
+        if (charts.length > 0) {
+            pdf.setFontSize(16);
+            pdf.setFont(undefined, 'bold');
+            pdf.text('Charts and Visualizations', 20, startY);
+            
+            let currentY = startY + 20;
+            
+            charts.forEach((chart, index) => {
+                try {
+                    if (currentY > 200) {
+                        pdf.addPage();
+                        currentY = 20;
+                    }
+                    
+                    const imgData = chart.toDataURL('image/png');
+                    pdf.addImage(imgData, 'PNG', 20, currentY, 160, 80);
+                    currentY += 90;
+                } catch (error) {
+                    console.warn(`Could not export chart ${index}:`, error);
+                }
+            });
+        }
+    }
+
+    extractDashboardStats() {
+        const stats = [];
+        
+        document.querySelectorAll('.stat-card, .dashboard-stat').forEach(card => {
+            const label = card.querySelector('.stat-label, .card-header')?.textContent?.trim();
+            const value = card.querySelector('.stat-value, .stat-number')?.textContent?.trim();
+            
+            if (label && value) {
+                stats.push({ label, value });
+            }
+        });
+        
+        return stats;
+    }
+
+    extractRecentActivities() {
+        const activities = [];
+        
+        document.querySelectorAll('.activity-item, .timeline-item').forEach(item => {
+            const action = item.querySelector('.activity-action, .timeline-action')?.textContent?.trim();
+            const time = item.querySelector('.activity-time, .timeline-time')?.textContent?.trim();
+            const user = item.querySelector('.activity-user')?.textContent?.trim() || 'Unknown';
+            const details = item.querySelector('.activity-details, .timeline-details')?.textContent?.trim();
+            
+            if (action && time) {
+                activities.push({ action, time, user, details });
+            }
+        });
+        
+        return activities.slice(0, 50); // Limit to 50 most recent
+    }
     setupThemeToggle() {
         const toggle = document.getElementById('themeToggle');
         if (!toggle) return;
@@ -646,6 +1308,245 @@ class UserActivityDashboard {
             info: '#17a2b8'
         };
         return colors[type] || '#17a2b8';
+    }
+
+    // ============================================
+    // DRAG AND DROP WIDGETS & QUICK FILTERS
+    // ============================================
+
+    setupDragAndDrop() {
+        this.initializeDraggableWidgets();
+        this.setupWidgetLayout();
+    }
+
+    initializeDraggableWidgets() {
+        const widgets = document.querySelectorAll('.dashboard-card, .widget');
+        
+        widgets.forEach(widget => {
+            widget.draggable = true;
+            widget.classList.add('draggable');
+            
+            widget.addEventListener('dragstart', (e) => {
+                widget.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', widget.outerHTML);
+                e.dataTransfer.setData('text/plain', widget.id || widget.className);
+            });
+            
+            widget.addEventListener('dragend', (e) => {
+                widget.classList.remove('dragging');
+            });
+        });
+
+        this.setupDropZones();
+    }
+
+    setupDropZones() {
+        const dropZones = document.querySelectorAll('.widgets-grid, .dashboard-content');
+        
+        dropZones.forEach(zone => {
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+            });
+            
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                this.saveWidgetLayout();
+                this.showNotification('Widget layout updated', 'success');
+            });
+        });
+    }
+
+    saveWidgetLayout() {
+        const widgets = document.querySelectorAll('.draggable');
+        const layout = [];
+        
+        widgets.forEach((widget, index) => {
+            layout.push({
+                id: widget.id || `widget-${index}`,
+                order: index,
+                className: widget.className
+            });
+        });
+        
+        localStorage.setItem('uat-widget-layout', JSON.stringify(layout));
+        this.widgetLayout = layout;
+    }
+
+    loadWidgetLayout() {
+        const saved = localStorage.getItem('uat-widget-layout');
+        return saved ? JSON.parse(saved) : [];
+    }
+
+    setupWidgetLayout() {
+        if (this.widgetLayout.length > 0) {
+            setTimeout(() => {
+                this.applyWidgetLayout();
+            }, 100);
+        }
+    }
+
+    applyWidgetLayout() {
+        const container = document.querySelector('.widgets-grid, .dashboard-content');
+        if (!container) return;
+        
+        this.widgetLayout
+            .sort((a, b) => a.order - b.order)
+            .forEach(item => {
+                const widget = document.getElementById(item.id) || 
+                              document.querySelector(`.${item.className.split(' ')[0]}`);
+                if (widget) {
+                    container.appendChild(widget);
+                }
+            });
+    }
+
+    setupQuickFilters() {
+        this.createQuickFiltersPanel();
+    }
+
+    createQuickFiltersPanel() {
+        if (!document.querySelector('.dashboard-quick-filters')) {
+            const quickFiltersHTML = `
+                <div class="dashboard-quick-filters mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <span><i class="fas fa-filter"></i> Quick Filters</span>
+                            <div class="card-tools">
+                                <button class="card-tool" onclick="dashboard.clearAllFilters()">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="quick-filters">
+                                <button class="quick-filter-btn" data-filter="today">Today</button>
+                                <button class="quick-filter-btn" data-filter="week">This Week</button>
+                                <button class="quick-filter-btn" data-filter="month">This Month</button>
+                                <button class="quick-filter-btn" data-filter="year">This Year</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const filterPanel = document.querySelector('.filter-panel');
+            if (filterPanel) {
+                filterPanel.insertAdjacentHTML('afterend', quickFiltersHTML);
+            }
+
+            document.querySelectorAll('.dashboard-quick-filters .quick-filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    this.applyQuickFilter(btn);
+                });
+            });
+        }
+    }
+
+    applyQuickFilter(button) {
+        const filter = button.dataset.filter;
+        const isActive = button.classList.contains('active');
+        
+        // Toggle filter state
+        document.querySelectorAll('.quick-filter-btn').forEach(btn => btn.classList.remove('active'));
+        
+        if (!isActive) {
+            button.classList.add('active');
+            this.showNotification(`Applied ${filter} filter`, 'info');
+        } else {
+            this.showNotification('Filter cleared', 'info');
+        }
+    }
+
+    clearAllFilters() {
+        document.querySelectorAll('.quick-filter-btn.active').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        this.showNotification('All filters cleared', 'info');
+    }
+
+    initializeAnimations() {
+        document.querySelectorAll('.stat-card').forEach((card, index) => {
+            card.classList.add('fade-in-up', `stagger-${(index % 4) + 1}`);
+        });
+
+        document.querySelectorAll('.dashboard-card, .card').forEach((card, index) => {
+            setTimeout(() => {
+                card.classList.add('fade-in-up');
+            }, index * 100);
+        });
+    }
+
+    showDashboardSettings() {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Dashboard Settings</h3>
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="autoRefreshSetting" ${this.refreshInterval ? 'checked' : ''}>
+                            Enable auto-refresh
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label for="refreshInterval">Refresh interval (seconds):</label>
+                        <select id="refreshIntervalSetting">
+                            <option value="30">30 seconds</option>
+                            <option value="60" selected>60 seconds</option>
+                            <option value="300">5 minutes</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <button class="btn btn-danger" onclick="dashboard.resetWidgetLayout()">
+                            Reset Widget Layout
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="dashboard.saveDashboardSettings()">Save Settings</button>
+                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+                </div>
+            </div>
+        `;
+        
+        modal.style.cssText = `
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 2000;
+            display: flex; align-items: center; justify-content: center;
+        `;
+        
+        modal.querySelector('.modal-content').style.cssText = `
+            background: var(--card-bg); padding: 2rem; border-radius: 0.5rem;
+            min-width: 400px; box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.3);
+        `;
+        
+        document.body.appendChild(modal);
+    }
+
+    saveDashboardSettings() {
+        const autoRefresh = document.getElementById('autoRefreshSetting').checked;
+        const interval = document.getElementById('refreshIntervalSetting').value;
+        
+        if (autoRefresh) {
+            this.startAutoRefresh(parseInt(interval) * 1000);
+        } else {
+            this.stopAutoRefresh();
+        }
+        
+        this.showNotification('Settings saved successfully', 'success');
+        document.querySelector('.modal-overlay').remove();
+    }
+
+    resetWidgetLayout() {
+        localStorage.removeItem('uat-widget-layout');
+        this.showNotification('Widget layout reset. Refresh the page to see changes.', 'info');
+    }
     }
 }
 

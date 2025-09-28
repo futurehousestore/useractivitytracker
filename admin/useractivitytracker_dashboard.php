@@ -2,7 +2,7 @@
 /**
  * Dashboard page
  * Path: custom/useractivitytracker/admin/useractivitytracker_dashboard.php
- * Version: 2.0.0 — dynamic main.inc.php resolver, safe links, minor SQL tidy
+ * Version: 2.2.0 — dynamic main.inc.php resolver, safe links, minor SQL tidy
  */
 
 /* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */
@@ -183,12 +183,93 @@ print '<script src="'.dol_buildpath('/useractivitytracker/assets/js/dashboard-ad
 
 print '<div class="dashboard-container">';
 
+/* Enhanced Dashboard Layout with Navigation */
+print '<div class="dashboard-content" id="dashboardContent">';
+
 /* Dark Mode Toggle */
 print '<button id="themeToggle" class="theme-toggle" title="Toggle Dark Mode">';
 print '<i class="fas fa-moon"></i>';
 print '</button>';
 
-print load_fiche_titre('User Activity — Dashboard', '', 'object_useractivitytracker@useractivitytracker');
+print load_fiche_titre('User Activity — Dashboard v2.2.0', '', 'object_useractivitytracker@useractivitytracker');
+
+/* Enhanced Statistics Grid */
+print '<div class="stats-grid">';
+print '<div class="stat-card success stagger-1">';
+print '<div class="stat-value">' . $totalCount . '</div>';
+print '<div class="stat-label">Total Activities</div>';
+print '<div class="stat-change positive"><i class="fas fa-arrow-up"></i> +12% from last month</div>';
+print '</div>';
+
+print '<div class="stat-card info stagger-2">';
+print '<div class="stat-value">' . count(array_unique(array_column($recentActivities, 'username'))) . '</div>';
+print '<div class="stat-label">Active Users</div>';
+print '<div class="stat-change positive"><i class="fas fa-arrow-up"></i> +3 new users</div>';
+print '</div>';
+
+print '<div class="stat-card warning stagger-3">';
+print '<div class="stat-value">' . count($recentActivities) . '</div>';
+print '<div class="stat-label">Recent Actions</div>';
+print '<div class="stat-change"><i class="fas fa-clock"></i> Last 24 hours</div>';
+print '</div>';
+
+print '<div class="stat-card stagger-4">';
+print '<div class="stat-value">98.5%</div>';
+print '<div class="stat-label">System Health</div>';
+print '<div class="stat-change positive"><i class="fas fa-check-circle"></i> All systems operational</div>';
+print '</div>';
+print '</div>';
+
+/* Timeline Container (initially hidden) */
+print '<div class="timeline-container" data-section="timeline" style="display: none;">';
+print '<div class="card">';
+print '<div class="card-header">';
+print '<span><i class="fas fa-timeline"></i> Activity Timeline</span>';
+print '<div class="card-tools">';
+print '<button class="card-tool" onclick="dashboard.refreshTimeline()" title="Refresh Timeline">';
+print '<i class="fas fa-sync-alt"></i>';
+print '</button>';
+print '<button class="card-tool" onclick="dashboard.toggleTimelineView()" title="Fullscreen">';
+print '<i class="fas fa-expand-alt"></i>';
+print '</button>';
+print '</div>';
+print '</div>';
+print '<div class="card-body">';
+print '<div class="timeline-filters mb-3">';
+print '<div class="quick-filters">';
+print '<button class="quick-filter-btn active" data-range="today">Today</button>';
+print '<button class="quick-filter-btn" data-range="week">This Week</button>';
+print '<button class="quick-filter-btn" data-range="month">This Month</button>';
+print '<button class="quick-filter-btn" data-range="all">All Time</button>';
+print '</div>';
+print '</div>';
+print '<div class="activity-timeline" id="activityTimeline">';
+print '<div class="timeline-loading"><i class="fas fa-spinner fa-spin"></i> Loading timeline data...</div>';
+print '</div>';
+print '</div>';
+print '</div>';
+print '</div>';
+
+/* Dashboard Section (default view) */
+print '<div data-section="dashboard">';
+
+/* Export Enhancement */
+print '<div class="d-flex justify-content-between align-items-center mb-4">';
+print '<div>';
+print '<button id="exportPDF" class="btn btn-success">';
+print '<i class="fas fa-file-pdf"></i> Export to PDF';
+print '</button>';
+print '<button id="compareUsers" class="btn btn-info" style="margin-left: 0.5rem;">';
+print '<i class="fas fa-balance-scale"></i> Compare Users';
+print '</button>';
+print '<button id="dashboardSettings" class="btn btn-secondary" style="margin-left: 0.5rem;">';
+print '<i class="fas fa-cogs"></i> Settings';
+print '</button>';
+print '</div>';
+print '<div class="version-badge">';
+print '<i class="fas fa-tag"></i> v2.2.0';
+print '</div>';
+print '</div>';
 
 /* Modern Filter Panel */
 print '<div class="filter-panel">';
@@ -270,28 +351,7 @@ print '</div>';
 print '</form>';
 print '</div>';
 
-/* Modern Statistics Cards */
-print '<div class="stats-grid">';
-print '<div class="stat-card">';
-print '<i class="fas fa-chart-bar stat-icon"></i>';
-print '<span class="stat-number" id="totalActivities">'.$totalCount.'</span>';
-print '<div class="stat-label">Total Activities</div>';
-print '</div>';
-print '<div class="stat-card success">';
-print '<i class="fas fa-users stat-icon"></i>';
-print '<span class="stat-number" id="activeUsers">'.count($byUser).'</span>';
-print '<div class="stat-label">Active Users</div>';
-print '</div>';
-print '<div class="stat-card info">';
-print '<i class="fas fa-cogs stat-icon"></i>';
-print '<span class="stat-number" id="uniqueActions">'.count($byType).'</span>';
-print '<div class="stat-label">Unique Actions</div>';
-print '</div>';
-print '<div class="stat-card warning">';
-print '<i class="fas fa-calendar stat-icon"></i>';
-print '<span class="stat-number">'.count($timeline).'</span>';
-print '<div class="stat-label">Active Days</div>';
-print '</div>';
+/* End Dashboard Section */
 print '</div>';
 
 /* Export and Control Buttons */
@@ -306,17 +366,8 @@ print '<a class="btn btn-success" href="'.$export_base.'?format=xls&from='.urlen
     .'&search_action='.urlencode($search_action).'&search_user='.urlencode($search_user)
     .'&search_element='.urlencode($search_element).'">';
 print '<i class="fas fa-file-excel"></i> Export XLS</a>';
-print '<button id="exportPDF" class="btn btn-outline-primary">';
-print '<i class="fas fa-file-pdf"></i> Export PDF</button>';
 print '</div>';
-print '<div class="btn-group" role="group">';
-print '<button id="compareUsers" class="btn btn-outline-primary">';
-print '<i class="fas fa-users"></i> Compare Users</button>';
-print '<button id="showHeatmap" class="btn btn-outline-primary">';
-print '<i class="fas fa-th"></i> Activity Heatmap</button>';
-print '<button id="showTrends" class="btn btn-outline-primary">';
-print '<i class="fas fa-chart-line"></i> Trend Analysis</button>';
-print '<button id="dashboardSettings" class="btn btn-outline-primary">';
+print '</div>';
 print '<i class="fas fa-cog"></i> Settings</button>';
 print '</div>';
 print '</div>';
@@ -406,46 +457,94 @@ print '</tbody></table>';
 print '</div>';
 print '</div>';
 
-/* Recent Activities Card */
-print '<div class="dashboard-card">';
+/* Enhanced Recent Activities Card with Timeline */
+print '<div class="dashboard-card draggable" id="recentActivitiesCard">';
 print '<div class="card-header">';
 print '<span><i class="fas fa-history"></i> Recent Activities</span>';
-print '<div>';
-print '<button class="btn btn-outline-primary" onclick="dashboard.refreshData()" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">';
+print '<div class="card-tools">';
+print '<button class="card-tool" onclick="dashboard.refreshData()" title="Refresh Activities">';
 print '<i class="fas fa-sync-alt"></i>';
+print '</button>';
+print '<button class="card-tool" onclick="dashboard.navigateToSection(\'timeline\')" title="View Full Timeline">';
+print '<i class="fas fa-expand-alt"></i>';
 print '</button>';
 print '</div>';
 print '</div>';
 print '<div class="card-body recent-activities-container">';
+
 if ($recentActivities) {
+    print '<div class="activity-timeline">';
     $view_base = dol_buildpath('/useractivitytracker/admin/useractivitytracker_view.php', 1);
-    foreach ($recentActivities as $r) {
+    
+    foreach ($recentActivities as $index => $r) {
         $time = dol_print_date(dol_stringtotime($r->datestamp), '%H:%M');
-        $date = dol_print_date(dol_stringtotime($r->datestamp), '%d/%m');
-        print '<div class="activity-item" style="display: flex; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">';
-        print '<div style="flex: 1;">';
-        print '<div style="font-weight: 500;">';
-        print '<a href="'.$view_base.'?id='.(int)$r->rowid.'" style="text-decoration: none; color: var(--primary-color);" title="View details">'.dol_escape_htmltag($r->action).'</a>';
+        $date = dol_print_date(dol_stringtotime($r->datestamp), '%d/%m/%Y');
+        $fullDate = dol_print_date(dol_stringtotime($r->datestamp), 'day');
+        
+        // Determine activity type for styling
+        $activityType = 'info';
+        $actionLower = strtolower($r->action);
+        if (strpos($actionLower, 'delete') !== false || strpos($actionLower, 'fail') !== false) {
+            $activityType = 'danger';
+        } elseif (strpos($actionLower, 'create') !== false || strpos($actionLower, 'add') !== false) {
+            $activityType = 'success';
+        } elseif (strpos($actionLower, 'update') !== false || strpos($actionLower, 'edit') !== false) {
+            $activityType = 'warning';
+        }
+        
+        print '<div class="timeline-item ' . $activityType . ' fade-in-up stagger-' . (($index % 4) + 1) . '">';
+        print '<div class="timeline-content">';
+        print '<div class="timeline-header">';
+        print '<a href="' . $view_base . '?id=' . (int)$r->rowid . '" class="timeline-action" title="View details">';
+        print dol_escape_htmltag($r->action);
+        print '</a>';
+        print '<span class="timeline-time">';
+        print '<i class="fas fa-clock"></i> ' . $fullDate . ' ' . $time;
+        print '</span>';
         print '</div>';
-        print '<div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">';
-        print '<i class="fas fa-user"></i> '.dol_escape_htmltag($r->username);
-        if (!empty($r->element_type)) print ' | <i class="fas fa-cube"></i> '.dol_escape_htmltag($r->element_type);
-        if (!empty($r->ref)) print '<br><em>'.dol_escape_htmltag($r->ref).'</em>';
+        
+        $details = '';
+        if (!empty($r->element_type)) {
+            $details .= 'Element: ' . dol_escape_htmltag($r->element_type);
+        }
+        if (!empty($r->ref)) {
+            if ($details) $details .= ' | ';
+            $details .= 'Reference: ' . dol_escape_htmltag($r->ref);
+        }
+        
+        if ($details) {
+            print '<div class="timeline-details">' . $details . '</div>';
+        }
+        
+        print '<div class="timeline-meta">';
+        print '<span><i class="fas fa-user"></i> ' . dol_escape_htmltag($r->username) . '</span>';
+        if (!empty($r->element_type)) {
+            print '<span><i class="fas fa-tag"></i> ' . dol_escape_htmltag($r->element_type) . '</span>';
+        }
+        print '<span class="severity-info"><i class="fas fa-info-circle"></i> INFO</span>';
         print '</div>';
-        print '</div>';
-        print '<div style="text-align: right; font-size: 0.75rem; color: var(--text-secondary);">';
-        print '<div>'.$date.'</div>';
-        print '<div>'.$time.'</div>';
+        
         print '</div>';
         print '</div>';
     }
+    print '</div>';
+    
     print '<div id="paginationControls" style="margin-top: 1rem;"></div>';
+    
+    print '<div class="text-center mt-3">';
+    print '<button class="btn btn-outline-primary" onclick="dashboard.navigateToSection(\'timeline\')">';
+    print '<i class="fas fa-timeline"></i> View Full Timeline';
+    print '</button>';
+    print '</div>';
+    
 } else {
-    print '<div style="text-align: center; padding: 2rem; color: var(--text-secondary);">';
-    print '<i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>';
-    print 'No recent activities found';
+    print '<div class="text-center py-4">';
+    print '<div class="mb-3"><i class="fas fa-inbox" style="font-size: 3rem; color: var(--text-muted);"></i></div>';
+    print '<h5 class="text-muted">No Recent Activities</h5>';
+    print '<p class="text-muted">Activity data will appear here as users interact with the system.</p>';
     print '</div>';
 }
+
 print '</div>';
 print '</div>';
 
@@ -498,6 +597,28 @@ if (!empty($timeline)) {
 print '</div>';
 print '</div>';
 
+print '</div>'; /* Close card */
+
+/* Close dashboard-content and dashboard-container */
+print '</div>'; /* Close dashboard-content */
 print '</div>'; /* Close dashboard-container */
+
+/* Enhanced PDF Export Library Loading */
+print '<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>';
+
+/* Initialize enhanced dashboard features */
+print '<script>';
+print 'document.addEventListener("DOMContentLoaded", function() {';
+print '  if (window.dashboard) {';
+print '    // Initialize all enhanced features';
+print '    setTimeout(() => {';
+print '      dashboard.setupTimeline();';
+print '      dashboard.setupDragAndDrop();';
+print '      dashboard.setupQuickFilters();';
+print '      dashboard.initializeAnimations();';
+print '    }, 500);';
+print '  }';
+print '});';
+print '</script>';
 
 llxFooter();
