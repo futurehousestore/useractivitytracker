@@ -2,7 +2,7 @@
 /**
  * Dashboard page
  * Path: custom/useractivitytracker/admin/useractivitytracker_dashboard.php
- * Version: 2.2.0 — dynamic main.inc.php resolver, safe links, minor SQL tidy
+ * Version: 2.3.0 — dynamic main.inc.php resolver, safe links, minor SQL tidy
  */
 
 /* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */
@@ -191,7 +191,7 @@ print '<button id="themeToggle" class="theme-toggle" title="Toggle Dark Mode">';
 print '<i class="fas fa-moon"></i>';
 print '</button>';
 
-print load_fiche_titre('User Activity — Dashboard v2.2.0', '', 'object_useractivitytracker@useractivitytracker');
+print load_fiche_titre('User Activity — Dashboard v2.3.0', '', 'object_useractivitytracker@useractivitytracker');
 
 /* Enhanced Statistics Grid */
 print '<div class="stats-grid">';
@@ -267,7 +267,7 @@ print '<i class="fas fa-cogs"></i> Settings';
 print '</button>';
 print '</div>';
 print '<div class="version-badge">';
-print '<i class="fas fa-tag"></i> v2.2.0';
+print '<i class="fas fa-tag"></i> v2.3.0';
 print '</div>';
 print '</div>';
 

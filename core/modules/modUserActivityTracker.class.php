@@ -2,7 +2,7 @@
 /**
  * Module descriptor — User Activity Tracker
  * Path: custom/useractivitytracker/core/modules/modUserActivityTracker.class.php
- * Version: 2.2.0
+ * Version: 2.3.0
  */
 
 require_once DOL_DOCUMENT_ROOT . '/core/modules/DolibarrModules.class.php';
@@ -20,7 +20,7 @@ class modUserActivityTracker extends DolibarrModules
         $this->family       = 'technic';
         $this->name         = preg_replace('/^mod/i', '', get_class($this));
         $this->description  = 'Track and analyse user activity across Dolibarr';
-        $this->version      = '2.2.0';
+        $this->version      = '2.3.0';
         $this->const_name   = 'MAIN_MODULE_' . strtoupper($this->rights_class);
         $this->special      = 0;
         $this->picto        = 'title.svg@useractivitytracker';
@@ -87,77 +87,77 @@ class modUserActivityTracker extends DolibarrModules
             'fk_menu'  => 0,                      // <— TOP MENU: must be 0
             'type'     => 'top',
             'titre'    => 'Activity Tracker',
-            'mainmenu' => 'useractivitytracker',
+            'mainmenu' => $this->rights_class,
             'leftmenu' => '',                     // no left key at top level
             'url'      => '/useractivitytracker/admin/useractivitytracker_dashboard.php',
             'langs'    => 'useractivitytracker@useractivitytracker',
             'position' => 55,
-            'enabled'  => '$conf->useractivitytracker->enabled',
-            'perms'    => '$user->rights->useractivitytracker->read',
+            'enabled'  => '$conf->'.$this->rights_class.'->enabled',
+            'perms'    => '$user->rights->'.$this->rights_class.'->read',
             'target'   => '',
             'user'     => 2
         );
 
         // Left: Dashboard
         $this->menu[] = array(
-            'fk_menu'  => 'fk_mainmenu=useractivitytracker',   // <— LEFT under our top
+            'fk_menu'  => 'fk_mainmenu='.$this->rights_class,   // <— LEFT under our top
             'type'     => 'left',
             'titre'    => 'Dashboard',
-            'mainmenu' => 'useractivitytracker',
-            'leftmenu' => 'useractivitytracker_dashboard',
+            'mainmenu' => $this->rights_class,
+            'leftmenu' => $this->rights_class.'_dashboard',
             'url'      => '/useractivitytracker/admin/useractivitytracker_dashboard.php',
             'langs'    => 'useractivitytracker@useractivitytracker',
             'position' => 100,
-            'enabled'  => '$conf->useractivitytracker->enabled',
-            'perms'    => '$user->rights->useractivitytracker->read',
+            'enabled'  => '$conf->'.$this->rights_class.'->enabled',
+            'perms'    => '$user->rights->'.$this->rights_class.'->read',
             'target'   => '',
             'user'     => 2
         );
 
         // Left: Settings
         $this->menu[] = array(
-            'fk_menu'  => 'fk_mainmenu=useractivitytracker',
+            'fk_menu'  => 'fk_mainmenu='.$this->rights_class,
             'type'     => 'left',
             'titre'    => 'Settings',
-            'mainmenu' => 'useractivitytracker',
-            'leftmenu' => 'useractivitytracker_setup',
+            'mainmenu' => $this->rights_class,
+            'leftmenu' => $this->rights_class.'_setup',
             'url'      => '/useractivitytracker/admin/useractivitytracker_setup.php',
             'langs'    => 'useractivitytracker@useractivitytracker',
             'position' => 200,
-            'enabled'  => '$conf->useractivitytracker->enabled',
-            'perms'    => '$user->rights->useractivitytracker->admin',
+            'enabled'  => '$conf->'.$this->rights_class.'->enabled',
+            'perms'    => '$user->rights->'.$this->rights_class.'->admin',
             'target'   => '',
             'user'     => 2
         );
 
         // Left: Export
         $this->menu[] = array(
-            'fk_menu'  => 'fk_mainmenu=useractivitytracker',
+            'fk_menu'  => 'fk_mainmenu='.$this->rights_class,
             'type'     => 'left',
             'titre'    => 'Export Data',
-            'mainmenu' => 'useractivitytracker',
-            'leftmenu' => 'useractivitytracker_export',
-            'url'      => '/useractivitytracker/admin/useractivitytracker_dashboard.php#export',
+            'mainmenu' => $this->rights_class,
+            'leftmenu' => $this->rights_class.'_export',
+            'url'      => '/useractivitytracker/admin/useractivitytracker_export.php',
             'langs'    => 'useractivitytracker@useractivitytracker',
             'position' => 300,
-            'enabled'  => '$conf->useractivitytracker->enabled',
-            'perms'    => '$user->rights->useractivitytracker->export',
+            'enabled'  => '$conf->'.$this->rights_class.'->enabled',
+            'perms'    => '$user->rights->'.$this->rights_class.'->export',
             'target'   => '',
             'user'     => 2
         );
 
         // Left: Analysis
         $this->menu[] = array(
-            'fk_menu'  => 'fk_mainmenu=useractivitytracker',
+            'fk_menu'  => 'fk_mainmenu='.$this->rights_class,
             'type'     => 'left',
             'titre'    => 'Analysis',
-            'mainmenu' => 'useractivitytracker',
-            'leftmenu' => 'useractivitytracker_analysis',
+            'mainmenu' => $this->rights_class,
+            'leftmenu' => $this->rights_class.'_analysis',
             'url'      => '/useractivitytracker/admin/useractivitytracker_analysis.php',
             'langs'    => 'useractivitytracker@useractivitytracker',
             'position' => 400,
-            'enabled'  => '$conf->useractivitytracker->enabled',
-            'perms'    => '$user->rights->useractivitytracker->read',
+            'enabled'  => '$conf->'.$this->rights_class.'->enabled',
+            'perms'    => '$user->rights->'.$this->rights_class.'->read',
             'target'   => '',
             'user'     => 2
         );

@@ -2,7 +2,7 @@
 /**
  * Activity Details Viewer
  * Path: custom/useractivitytracker/admin/useractivitytracker_view.php
- * Version: 2.2.0
+ * Version: 2.3.0
  */
 require '../../main.inc.php';
 require_once '../class/useractivity.class.php';

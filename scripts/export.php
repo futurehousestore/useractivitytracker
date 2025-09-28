@@ -2,7 +2,7 @@
 /**
  * Export endpoint
  * Path: custom/useractivitytracker/scripts/export.php
- * Version: 2.0.0
+ * Version: 2.3.0
  */
 require '../main.inc.php';
 if (empty($user->rights->useractivitytracker->export)) accessforbidden();
