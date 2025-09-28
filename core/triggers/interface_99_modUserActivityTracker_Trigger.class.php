@@ -1,4 +1,3 @@
-
 <?php
 /**
  * Universal logger trigger for User Activity Tracker

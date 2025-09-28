@@ -1,4 +1,3 @@
-
 <?php
 /**
  * DAO for alt_user_activity
