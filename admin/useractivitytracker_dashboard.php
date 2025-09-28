@@ -2,7 +2,7 @@
 /**
  * Dashboard page
  * Path: custom/useractivitytracker/admin/useractivitytracker_dashboard.php
- * Version: 2.2.0 — dynamic main.inc.php resolver, safe links, minor SQL tidy
+ * Version: 2.3.0 — fixed menu links, export functionality, dynamic main.inc.php resolver
  */
 
 /* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */
@@ -63,7 +63,8 @@ if (GETPOST('ajax', 'int') == 1) {
     
     /* Get fresh data for AJAX response */
     $totalCount = 0;
-    $sql = "SELECT COUNT(*) as total FROM {$prefix}alt_user_activity {$cond}";
+    $sql = "SELECT COUNT(*) as total FROM {
+$prefix}alt_user_activity {$cond}";
     $res = $db->query($sql);
     if ($res && ($obj = $db->fetch_object($res))) { $totalCount = (int)$obj->total; $db->free($res); }
     
@@ -78,8 +79,8 @@ if (GETPOST('ajax', 'int') == 1) {
     if ($res) { while ($o = $db->fetch_object($res)) $byUser[] = $o; $db->free($res); }
     
     $recentActivities = array();
-    $sql = "SELECT rowid, datestamp, action, element_type, username, ref 
-            FROM {$prefix}alt_user_activity {$cond} 
+    $sql = "SELECT rowid, datestamp, action, element_type, username, ref \
+            FROM {$prefix}alt_user_activity {$cond} \
             ORDER BY datestamp DESC LIMIT 20";
     $res = $db->query($sql);
     if ($res) { while ($o = $db->fetch_object($res)) $recentActivities[] = $o; $db->free($res); }
@@ -159,16 +160,16 @@ $res = $db->query($sql);
 if ($res && ($obj = $db->fetch_object($res))) { $totalCount = (int)$obj->total; $db->free($res); }
 
 $recentActivities = array();
-$sql = "SELECT rowid, datestamp, action, element_type, username, ref 
-        FROM {$prefix}alt_user_activity {$cond} 
+$sql = "SELECT rowid, datestamp, action, element_type, username, ref \
+        FROM {$prefix}alt_user_activity {$cond} \
         ORDER BY datestamp DESC LIMIT 20";
 $res = $db->query($sql);
 if ($res) { while ($o = $db->fetch_object($res)) $recentActivities[] = $o; $db->free($res); }
 
 /* Opportunistic retention cleanup */
 $days = getDolGlobalInt('USERACTIVITYTRACKER_RETENTION_DAYS', 365);
-$db->query("DELETE FROM ".$db->prefix()."alt_user_activity 
-            WHERE datestamp < DATE_SUB(NOW(), INTERVAL ".((int)$days)." DAY) 
+$db->query("DELETE FROM ".$db->prefix()."alt_user_activity \
+            WHERE datestamp < DATE_SUB(NOW(), INTERVAL ".((int)$days)." DAY) \
               AND entity=".(int)$conf->entity);
 
 /* ---- View ---- */
@@ -191,7 +192,7 @@ print '<button id="themeToggle" class="theme-toggle" title="Toggle Dark Mode">';
 print '<i class="fas fa-moon"></i>';
 print '</button>';
 
-print load_fiche_titre('User Activity — Dashboard v2.2.0', '', 'object_useractivitytracker@useractivitytracker');
+print load_fiche_titre('User Activity — Dashboard v2.3.0', '', 'object_useractivitytracker@useractivitytracker');
 
 /* Enhanced Statistics Grid */
 print '<div class="stats-grid">';
@@ -248,7 +249,7 @@ print '<div class="timeline-loading"><i class="fas fa-spinner fa-spin"></i> Load
 print '</div>';
 print '</div>';
 print '</div>';
-print '</div>';
+print '</div>'; 
 
 /* Dashboard Section (default view) */
 print '<div data-section="dashboard">';
@@ -267,7 +268,7 @@ print '<i class="fas fa-cogs"></i> Settings';
 print '</button>';
 print '</div>';
 print '<div class="version-badge">';
-print '<i class="fas fa-tag"></i> v2.2.0';
+print '<i class="fas fa-tag"></i> v2.3.0';
 print '</div>';
 print '</div>';
 
@@ -358,17 +359,27 @@ print '</div>';
 $export_base = dol_buildpath('/useractivitytracker/scripts/export.php', 1);
 print '<div class="text-center mb-4">';
 print '<div class="btn-group" role="group" style="margin-bottom: 1rem;">';
+
+// Fix menu export links by ensuring they use the correct idmenu parameter if available
+$idmenu = GETPOST('idmenu', 'int');
+$mainmenu = GETPOST('mainmenu', 'alpha');
+$leftmenu = GETPOST('leftmenu', 'alpha');
+
+$menu_params = '';
+if ($idmenu) $menu_params .= '&idmenu=' . (int)$idmenu;
+if ($mainmenu) $menu_params .= '&mainmenu=' . urlencode($mainmenu);
+if ($leftmenu) $menu_params .= '&leftmenu=' . urlencode($leftmenu);
+
 print '<a class="btn btn-success" href="'.$export_base.'?format=csv&from='.urlencode($from).'&to='.urlencode($to)
     .'&search_action='.urlencode($search_action).'&search_user='.urlencode($search_user)
-    .'&search_element='.urlencode($search_element).'">';
+    .'&search_element='.urlencode($search_element).$menu_params.'">';
 print '<i class="fas fa-file-csv"></i> Export CSV</a>';
+
 print '<a class="btn btn-success" href="'.$export_base.'?format=xls&from='.urlencode($from).'&to='.urlencode($to)
     .'&search_action='.urlencode($search_action).'&search_user='.urlencode($search_user)
-    .'&search_element='.urlencode($search_element).'">';
+    .'&search_element='.urlencode($search_element).$menu_params.'">';
 print '<i class="fas fa-file-excel"></i> Export XLS</a>';
-print '</div>';
-print '</div>';
-print '<i class="fas fa-cog"></i> Settings</button>';
+
 print '</div>';
 print '</div>';
 
@@ -431,7 +442,7 @@ print '</div>';
 print '</div>';
 print '</div>';
 
-print '</div>';
+print '</div>'; 
 
 /* Second Row of Cards */
 print '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">';
@@ -495,7 +506,8 @@ if ($recentActivities) {
         print '<div class="timeline-item ' . $activityType . ' fade-in-up stagger-' . (($index % 4) + 1) . '">';
         print '<div class="timeline-content">';
         print '<div class="timeline-header">';
-        print '<a href="' . $view_base . '?id=' . (int)$r->rowid . '" class="timeline-action" title="View details">';
+        // Preserve menu parameters in the view URL
+        print '<a href="' . $view_base . '?id=' . (int)$r->rowid . $menu_params . '" class="timeline-action" title="View details">';
         print dol_escape_htmltag($r->action);
         print '</a>';
         print '<span class="timeline-time">';
@@ -548,7 +560,7 @@ if ($recentActivities) {
 print '</div>';
 print '</div>';
 
-print '</div>';
+print '</div>'; 
 
 /* Activity Timeline Chart */
 print '<div class="dashboard-card">';
@@ -595,7 +607,7 @@ if (!empty($timeline)) {
     print '</div>';
 }
 print '</div>';
-print '</div>';
+print '</div>'; 
 
 print '</div>'; /* Close card */
 
