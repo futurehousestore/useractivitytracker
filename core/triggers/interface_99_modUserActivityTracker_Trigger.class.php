@@ -24,6 +24,9 @@ class InterfaceUserActivityTrackerTrigger
 
     public function runTrigger($action, $object, User $user, Translate $langs, Conf $conf)
     {
+        // Skip if module is not enabled
+        if (empty($conf->useractivitytracker->enabled)) return 0;
+        
         // Avoid recursion and skip tracking for activity tracker itself
         if (! empty($object) && is_object($object) && isset($object->element) && $object->element === 'alt_user_activity') return 0;
         

@@ -27,6 +27,9 @@ class ActionsUserActivityTracker
         
         if (empty($conf->useractivitytracker->enabled)) return 0;
         
+        // Skip if user tracking is globally disabled
+        if (!getDolGlobalInt('USERACTIVITYTRACKER_ENABLE_TRACKING', 1)) return 0;
+        
         // Log successful login
         $this->logActivity('USER_LOGIN', array(
             'login' => $parameters['login'] ?? $user->login,
@@ -48,6 +51,9 @@ class ActionsUserActivityTracker
         
         if (empty($conf->useractivitytracker->enabled)) return 0;
         
+        // Skip if user tracking is globally disabled
+        if (!getDolGlobalInt('USERACTIVITYTRACKER_ENABLE_TRACKING', 1)) return 0;
+        
         // Log logout
         $this->logActivity('USER_LOGOUT', array(
             'login' => $user->login,
@@ -68,6 +74,9 @@ class ActionsUserActivityTracker
         
         if (empty($conf->useractivitytracker->enabled)) return 0;
         
+        // Skip if user tracking is globally disabled
+        if (!getDolGlobalInt('USERACTIVITYTRACKER_ENABLE_TRACKING', 1)) return 0;
+        
         // Log failed login attempt
         $this->logActivity('USER_LOGIN_FAILED', array(
             'attempted_login' => $parameters['login'] ?? 'unknown',
@@ -87,6 +96,9 @@ class ActionsUserActivityTracker
         global $user, $conf;
         
         if (empty($conf->useractivitytracker->enabled) || empty($user->id)) return 0;
+        
+        // Skip if user tracking is globally disabled
+        if (!getDolGlobalInt('USERACTIVITYTRACKER_ENABLE_TRACKING', 1)) return 0;
         
         // Only track significant page loads (not AJAX requests)
         if (!empty($_GET['ajax']) || !empty($_POST['ajax'])) return 0;
@@ -117,6 +129,9 @@ class ActionsUserActivityTracker
         
         if (empty($conf->useractivitytracker->enabled) || empty($user->id)) return 0;
         
+        // Skip if user tracking is globally disabled
+        if (!getDolGlobalInt('USERACTIVITYTRACKER_ENABLE_TRACKING', 1)) return 0;
+        
         // Track significant actions that might not have triggers
         $significantActions = array('validate', 'confirm', 'delete', 'cancel', 'clone', 'merge');
         
@@ -138,6 +153,12 @@ class ActionsUserActivityTracker
     private function logActivity($action, $payload = array())
     {
         global $user, $conf;
+        
+        // Skip if user tracking is globally disabled
+        if (!getDolGlobalInt('USERACTIVITYTRACKER_ENABLE_TRACKING', 1)) return;
+        
+        // Skip if user tracking is disabled for this specific user
+        if (getDolGlobalString('USERACTIVITYTRACKER_SKIP_USER_'.$user->id)) return;
         
         try {
             $now = dol_now();
@@ -165,18 +186,32 @@ class ActionsUserActivityTracker
                 $severity = 'notice';
             }
             
+            // Fix: Use correct column names matching the actual table schema
             $sql = "INSERT INTO " . $this->db->prefix() . "alt_user_activity 
-                    (datec, fk_user, action, element_type, fk_object, ref, 
-                     ip, payload, entity, session_id, severity) 
+                    (datestamp, userid, action, element_type, object_id, ref, 
+                     ip, payload, entity, severity) 
                     VALUES ('" . $this->db->idate($now) . "', " . (int)$user->id . ", 
                            '" . $this->db->escape($action) . "', 'hook_event', NULL, NULL, 
                            '" . $this->db->escape($this->getClientIP()) . "', 
                            '" . $this->db->escape($json) . "', " . (int)$conf->entity . ", 
-                           '" . $this->db->escape(session_id()) . "', '" . $this->db->escape($severity) . "')";
+                           '" . $this->db->escape($severity) . "')";
             
             $result = $this->db->query($sql);
             if (!$result) {
-                error_log("User Activity Tracker Hook: Failed to log activity - " . $this->db->lasterror());
+                $error_msg = "User Activity Tracker Hook: Failed to log activity - " . $this->db->lasterror();
+                error_log($error_msg);
+                
+                // Check if table exists and try to create it if missing
+                $table_check = $this->db->query("SHOW TABLES LIKE '".$this->db->prefix()."alt_user_activity'");
+                if (!$table_check || $this->db->num_rows($table_check) == 0) {
+                    error_log("User Activity Tracker Hook: Table ".$this->db->prefix()."alt_user_activity does not exist - attempting to create");
+                    $this->createTableIfMissing();
+                    // Retry the insert once
+                    $result = $this->db->query($sql);
+                    if (!$result) {
+                        error_log("User Activity Tracker Hook: Retry failed after table creation - " . $this->db->lasterror());
+                    }
+                }
             }
             
         } catch (Exception $e) {
@@ -198,5 +233,50 @@ class ActionsUserActivityTracker
             $ip = $_SERVER['REMOTE_ADDR'];
         }
         return $ip;
+    }
+
+    /**
+     * Create the activity table if missing
+     * @return bool Success
+     */
+    private function createTableIfMissing()
+    {
+        try {
+            $sql = "CREATE TABLE IF NOT EXISTS ".$this->db->prefix()."alt_user_activity (
+                rowid INTEGER AUTO_INCREMENT PRIMARY KEY,
+                tms TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                datestamp DATETIME NULL,
+                entity INTEGER NOT NULL DEFAULT 1,
+                action VARCHAR(128) NOT NULL,
+                element_type VARCHAR(64) NULL,
+                object_id INTEGER NULL,
+                ref VARCHAR(128) NULL,
+                userid INTEGER NULL,
+                username VARCHAR(128) NULL,
+                ip VARCHAR(64) NULL,
+                payload LONGTEXT NULL,
+                severity VARCHAR(16) NULL,
+                kpi1 DECIMAL(24,6) NULL,
+                kpi2 DECIMAL(24,6) NULL,
+                note VARCHAR(255) NULL,
+                INDEX idx_action (action),
+                INDEX idx_element (element_type, object_id),
+                INDEX idx_user (userid),
+                INDEX idx_datestamp (datestamp),
+                INDEX idx_entity (entity)
+            ) ENGINE=InnoDB";
+            
+            $res = $this->db->query($sql);
+            if ($res) {
+                error_log("User Activity Tracker Hook: Successfully created missing table");
+                return true;
+            } else {
+                error_log("User Activity Tracker Hook: Failed to create table - " . $this->db->lasterror());
+                return false;
+            }
+        } catch (Exception $e) {
+            error_log("User Activity Tracker Hook: Exception creating table - " . $e->getMessage());
+            return false;
+        }
     }
 }
