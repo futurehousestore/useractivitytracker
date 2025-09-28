@@ -2,7 +2,7 @@
 /**
  * Module descriptor — User Activity Tracker
  * Path: custom/useractivitytracker/core/modules/modUserActivityTracker.class.php
- * Version: 2025-09-27.beta-1
+ * Version: 1.0.0
  */
 require_once DOL_DOCUMENT_ROOT . '/core/modules/DolibarrModules.class.php';
 
@@ -19,7 +19,7 @@ class modUserActivityTracker extends DolibarrModules
         $this->family = "technic";
         $this->name = preg_replace('/^mod/i','', get_class($this));
         $this->description = "Track and analyse user activity across Dolibarr";
-        $this->version = '2025-09-27.beta-1';
+        $this->version = '1.0.0';
         $this->const_name = 'MAIN_MODULE_'.strtoupper($this->rights_class);
         $this->special = 0;
         $this->picto = 'title.svg@useractivitytracker';
@@ -69,7 +69,89 @@ class modUserActivityTracker extends DolibarrModules
 
         // Menus
         $this->menu = array();
+        
+        // Main menu item - top level
         $this->menu[0] = array(
+            'fk_menu'  => '',
+            'type'     => 'top',
+            'titre'    => 'Activity Tracker',
+            'mainmenu' => 'useractivitytracker',
+            'leftmenu' => '',
+            'url'      => '/custom/useractivitytracker/admin/useractivitytracker_dashboard.php',
+            'langs'    => 'useractivitytracker@useractivitytracker',
+            'position' => 55,
+            'enabled'  => '1',
+            'perms'    => '$user->rights->useractivitytracker->read',
+            'target'   => '',
+            'user'     => 2
+        );
+        
+        // Dashboard submenu
+        $this->menu[1] = array(
+            'fk_menu'  => 'fk_mainmenu=useractivitytracker',
+            'type'     => 'left',
+            'titre'    => 'Dashboard',
+            'mainmenu' => 'useractivitytracker',
+            'leftmenu' => 'useractivitytracker_dashboard',
+            'url'      => '/custom/useractivitytracker/admin/useractivitytracker_dashboard.php',
+            'langs'    => 'useractivitytracker@useractivitytracker',
+            'position' => 100,
+            'enabled'  => '1',
+            'perms'    => '$user->rights->useractivitytracker->read',
+            'target'   => '',
+            'user'     => 2
+        );
+        
+        // Settings submenu
+        $this->menu[2] = array(
+            'fk_menu'  => 'fk_mainmenu=useractivitytracker',
+            'type'     => 'left',
+            'titre'    => 'Settings',
+            'mainmenu' => 'useractivitytracker',
+            'leftmenu' => 'useractivitytracker_setup',
+            'url'      => '/custom/useractivitytracker/admin/useractivitytracker_setup.php',
+            'langs'    => 'useractivitytracker@useractivitytracker',
+            'position' => 200,
+            'enabled'  => '1',
+            'perms'    => '$user->rights->useractivitytracker->admin',
+            'target'   => '',
+            'user'     => 2
+        );
+        
+        // Export submenu
+        $this->menu[3] = array(
+            'fk_menu'  => 'fk_mainmenu=useractivitytracker',
+            'type'     => 'left',
+            'titre'    => 'Export Data',
+            'mainmenu' => 'useractivitytracker',
+            'leftmenu' => 'useractivitytracker_export',
+            'url'      => '/custom/useractivitytracker/admin/useractivitytracker_dashboard.php#export',
+            'langs'    => 'useractivitytracker@useractivitytracker',
+            'position' => 300,
+            'enabled'  => '1',
+            'perms'    => '$user->rights->useractivitytracker->export',
+            'target'   => '',
+            'user'     => 2
+        );
+        
+        // Analysis submenu
+        $this->menu[4] = array(
+            'fk_menu'  => 'fk_mainmenu=useractivitytracker',
+            'type'     => 'left',
+            'titre'    => 'Analysis',
+            'mainmenu' => 'useractivitytracker',
+            'leftmenu' => 'useractivitytracker_analysis',
+            'url'      => '/custom/useractivitytracker/admin/useractivitytracker_analysis.php',
+            'langs'    => 'useractivitytracker@useractivitytracker',
+            'position' => 400,
+            'enabled'  => '1',
+            'perms'    => '$user->rights->useractivitytracker->read',
+            'target'   => '',
+            'user'     => 2
+        );
+        
+        // Keep legacy Tools menu for backward compatibility
+        $this->menu[5] = array(
             'fk_menu'  => 'fk_mainmenu=tools,fk_leftmenu=',
             'type'     => 'left',
             'titre'    => 'User Activity',
@@ -79,7 +161,6 @@ class modUserActivityTracker extends DolibarrModules
             'langs'    => 'useractivitytracker@useractivitytracker',
             'position' => 1000,
             'enabled'  => '1',
-            // Use standard rights expression (string evaluated by Dolibarr)
             'perms'    => '$user->rights->useractivitytracker->read',
             'target'   => '',
             'user'     => 2
@@ -88,33 +169,7 @@ class modUserActivityTracker extends DolibarrModules
 
     public function init($options = '')
     {
-        $sql = array();
-
-        $sql[] = "CREATE TABLE IF NOT EXISTS " . MAIN_DB_PREFIX . "alt_user_activity (
-            rowid INTEGER AUTO_INCREMENT PRIMARY KEY,
-            tms TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            datestamp DATETIME NULL,
-            entity INTEGER NOT NULL DEFAULT 1,
-            action VARCHAR(128) NOT NULL,
-            element_type VARCHAR(64) NULL,
-            object_id INTEGER NULL,
-            ref VARCHAR(128) NULL,
-            userid INTEGER NULL,
-            username VARCHAR(128) NULL,
-            ip VARCHAR(64) NULL,
-            payload LONGTEXT NULL,
-            severity VARCHAR(16) NULL,
-            kpi1 DECIMAL(24,6) NULL,
-            kpi2 DECIMAL(24,6) NULL,
-            note VARCHAR(255) NULL,
-            INDEX idx_action (action),
-            INDEX idx_element (element_type, object_id),
-            INDEX idx_user (userid),
-            INDEX idx_datestamp (datestamp),
-            INDEX idx_entity (entity)
-        ) ENGINE=InnoDB;";
-
-        // Use the parent method to execute table creation
+        // Use the parent method to execute table creation from SQL files
         return $this->_load_tables('/useractivitytracker/sql/', '');
     }
 
