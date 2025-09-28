@@ -7,7 +7,7 @@
 Track user activity across Dolibarr with a comprehensive dashboard, advanced analytics, CSV/XLS export, webhook alerts, anomaly detection, and retention cleanup.
 
 ## ✨ New in v2.0.0
-- **🎨 Enhanced Modern UI**: Professional icons throughout all admin pages for improved visual appeal
+- **🎨 Enhanced Modern UI**: Professional Font Awesome icons throughout all admin pages for improved visual appeal and intuitive navigation
 - **📊 Interactive Charts**: Chart.js integration with doughnut, bar, and line charts for comprehensive data visualization
 - **🔄 Real-Time Updates**: AJAX-powered live data refresh with configurable auto-refresh intervals
 - **🌙 Dark Mode**: Full theme support with localStorage persistence and smooth transitions
@@ -18,11 +18,12 @@ Track user activity across Dolibarr with a comprehensive dashboard, advanced ana
 - **⚙️ Dashboard Settings**: Customizable preferences for appearance, behavior, and data display
 - **🔍 Enhanced Filters**: Advanced search panel with element type, severity, and IP filtering
 - **📤 Modern Export**: Improved CSV/XLS export with better styling and PDF export foundation
-- **🔐 Comprehensive Login/Logout Tracking**: Enhanced hooks system for complete user session monitoring
-- **🎯 Cross-Platform Activity Tracking**: Extended tracking capabilities across all Dolibarr modules and pages
-- **🏗️ Hooks Architecture**: New hooks system supplements triggers for comprehensive activity capture
-- **🎭 Professional Icons**: Font Awesome icons integrated throughout for intuitive navigation
-- **📱 Enhanced Responsive Design**: Improved mobile experience with touch-optimized controls
+- **🔐 Comprehensive Login/Logout Tracking**: New hooks system captures all login/logout events with detailed session context
+- **🎯 Cross-Platform Activity Tracking**: Extended tracking capabilities across all Dolibarr modules and pages via hooks
+- **🏗️ Hooks Architecture**: New `ActionsUserActivityTracker` class supplements triggers for comprehensive activity capture
+- **🎭 Professional Icon System**: Consistent Font Awesome icon implementation across setup, dashboard, and analysis pages
+- **📱 Enhanced Responsive Design**: Improved mobile experience with optimized touch controls and flexible layouts
+- **🔄 Version 2.0.0 Upgrade**: Complete version harmonization across all components for consistent deployment
 - **Dolibarr 22.0.0 Compatibility**: Full compatibility with Dolibarr 22.0.0 and modern PHP versions
 - **Updated APIs**: Replaced deprecated `$conf->global` with modern `getDolGlobalString()` functions
 - **Improved Installation**: Better table creation process with proper SQL file handling
