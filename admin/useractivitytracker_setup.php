@@ -2,7 +2,7 @@
 /**
  * Setup page
  * Path: custom/useractivitytracker/admin/useractivitytracker_setup.php
- * Version: 2.2.0 — dynamic main.inc.php resolver (no closure), safe includes
+ * Version: 2.3.0 — dynamic main.inc.php resolver (no closure), safe includes
  */
 
 /* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */
@@ -59,7 +59,7 @@ elseif ($action === 'testwebhook' && getDolGlobalString('USERACTIVITYTRACKER_WEB
         'message' => 'Test webhook from User Activity Tracker',
         'date'    => dol_print_date(dol_now(),'standard'),
         'entity'  => $conf->entity,
-        'version' => '2.2.0'
+        'version' => '2.3.0'
     ), JSON_UNESCAPED_SLASHES);
 
     if (function_exists('curl_init')) {
@@ -182,7 +182,7 @@ if (class_exists('UserActivity')) {
     $by_user   = (array)($stats['by_user'] ?? array());
 }
 
-print '<tr><td class="titlefield"><i class="fas fa-tag"></i> Module Version</td><td><strong>2.2.0</strong></td></tr>';
+print '<tr><td class="titlefield"><i class="fas fa-tag"></i> Module Version</td><td><strong>2.3.0</strong></td></tr>';
 print '<tr><td><i class="fas fa-chart-line"></i> Total Activities (last 30 days)</td><td><strong>'.$tot.'</strong></td></tr>';
 print '<tr><td><i class="fas fa-tasks"></i> Unique Actions (last 30 days)</td><td><strong>'.count($by_action).'</strong></td></tr>';
 print '<tr><td><i class="fas fa-users"></i> Active Users (last 30 days)</td><td><strong>'.count($by_user).'</strong></td></tr>';

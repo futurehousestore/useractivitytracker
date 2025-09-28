@@ -2,6 +2,44 @@
 
 All notable changes to the User Activity Tracker module will be documented in this file.
 
+## [2.3.0] - 2024-01-20
+
+### 🚀 Bug Fixes and Enhancement Release
+
+This release addresses key issues and enhances functionality for better user experience and maintainability.
+
+#### 🔧 Bug Fixes
+- **Fixed Export Data Menu**: Export Data menu now points to dedicated export page instead of broken anchor link
+- **Created Dedicated Export Page**: New `useractivitytracker_export.php` provides comprehensive export functionality
+- **Dynamic Menu Configuration**: Made all menu entries dynamic using `$this->rights_class` for better maintainability
+- **Enhanced Export Interface**: New export page includes filters, preview, and direct download links
+
+#### ⚡ Technical Improvements  
+- **Version Consistency**: Updated all files to version 2.3.0 across the entire codebase
+- **Menu Architecture**: Improved menu system with dynamic references throughout all menu entries
+- **Export Functionality**: Enhanced export page with live preview and comprehensive filtering options
+- **Code Maintainability**: Replaced hardcoded strings with dynamic variables for easier maintenance
+
+#### 📁 Files Modified
+- **Core Module**: `core/modules/modUserActivityTracker.class.php` - Dynamic menu system and version 2.3.0
+- **New Export Page**: `admin/useractivitytracker_export.php` - Comprehensive export interface
+- **All PHP Files**: Updated version headers across admin/, class/, and core/ directories
+- **JavaScript/CSS Files**: Updated version headers in assets/
+- **Documentation**: Updated README.md version references
+
+#### 🎯 Enhancements
+- **Export Data Menu**: Now properly links to functional export page
+- **Export Preview**: Live preview of data before export with up to 20 sample rows
+- **Export Filtering**: Advanced filtering by date range, action, user, and element type
+- **Menu Consistency**: All menu entries now use dynamic configuration for better maintainability
+
+### 🔄 Migration Notes
+When upgrading from 2.2.0 to 2.3.0:
+- Export Data menu will now function properly and lead to dedicated export page
+- All menu configurations are now dynamic and more maintainable
+- No database changes required
+- All existing functionality is preserved and enhanced
+
 ## [2.2.0] - 2024-01-16
 
 ### 🚀 Major Enhancement Release - Next-Generation Dashboard

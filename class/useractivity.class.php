@@ -3,7 +3,7 @@
 /**
  * DAO for alt_user_activity
  * Path: custom/useractivitytracker/class/useractivity.class.php
- * Version: 2.2.0
+ * Version: 2.3.0
  */
 
 require_once DOL_DOCUMENT_ROOT . '/core/class/commonobject.class.php';
