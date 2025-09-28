@@ -1,12 +1,15 @@
 # User Activity Tracker (Dolibarr Module)
 
 **Version:** 1.0.0
-**Compatibility:** Dolibarr 14+ (tested on 20–22), PHP 7.4+
+**Compatibility:** Dolibarr 14.0+ to 22.0.0+, PHP 7.4+
 **Namespace/Dir:** `custom/useractivitytracker`
 
 Track user activity across Dolibarr with a comprehensive dashboard, advanced analytics, CSV/XLS export, webhook alerts, anomaly detection, and retention cleanup.
 
 ## ✨ New in v1.0.0
+- **Dolibarr 22.0.0 Compatibility**: Full compatibility with Dolibarr 22.0.0 and modern PHP versions
+- **Updated APIs**: Replaced deprecated `$conf->global` with modern `getDolGlobalString()` functions
+- **Improved Installation**: Better table creation process with proper SQL file handling
 - **Top Menu Integration**: Module now appears in the main menu bar for easy access
 - **Enhanced Dashboard**: Improved analytics with visual indicators and recent activity feed  
 - **Advanced Search**: Filter activities by action, user, element type with smart search
