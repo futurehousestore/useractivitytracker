@@ -1,6 +1,6 @@
 # User Activity Tracker (Dolibarr Module)
 
-**Version:** 2.3.0
+**Version:** 2.4.0
 **Compatibility:** Dolibarr 14.0+ to 22.0.0+, PHP 7.4+
 **Namespace/Dir:** `custom/useractivitytracker`
 

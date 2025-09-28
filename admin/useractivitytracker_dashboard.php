@@ -2,7 +2,7 @@
 /**
  * Dashboard page
  * Path: custom/useractivitytracker/admin/useractivitytracker_dashboard.php
- * Version: 2.3.0 — dynamic main.inc.php resolver, safe links, minor SQL tidy
+ * Version: 2.4.0 — dynamic main.inc.php resolver, bug fixes
  */
 
 /* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */
