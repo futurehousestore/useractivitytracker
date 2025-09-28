@@ -179,6 +179,7 @@ print '<link rel="stylesheet" href="'.dol_buildpath('/useractivitytracker/assets
 print '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">';
 print '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.min.js"></script>';
 print '<script src="'.dol_buildpath('/useractivitytracker/assets/js/dashboard-modern.js', 1).'"></script>';
+print '<script src="'.dol_buildpath('/useractivitytracker/assets/js/dashboard-advanced.js', 1).'"></script>';
 
 print '<div class="dashboard-container">';
 
@@ -296,7 +297,7 @@ print '</div>';
 /* Export and Control Buttons */
 $export_base = dol_buildpath('/useractivitytracker/scripts/export.php', 1);
 print '<div class="text-center mb-4">';
-print '<div class="btn-group" role="group">';
+print '<div class="btn-group" role="group" style="margin-bottom: 1rem;">';
 print '<a class="btn btn-success" href="'.$export_base.'?format=csv&from='.urlencode($from).'&to='.urlencode($to)
     .'&search_action='.urlencode($search_action).'&search_user='.urlencode($search_user)
     .'&search_element='.urlencode($search_element).'">';
@@ -307,6 +308,16 @@ print '<a class="btn btn-success" href="'.$export_base.'?format=xls&from='.urlen
 print '<i class="fas fa-file-excel"></i> Export XLS</a>';
 print '<button id="exportPDF" class="btn btn-outline-primary">';
 print '<i class="fas fa-file-pdf"></i> Export PDF</button>';
+print '</div>';
+print '<div class="btn-group" role="group">';
+print '<button id="compareUsers" class="btn btn-outline-primary">';
+print '<i class="fas fa-users"></i> Compare Users</button>';
+print '<button id="showHeatmap" class="btn btn-outline-primary">';
+print '<i class="fas fa-th"></i> Activity Heatmap</button>';
+print '<button id="showTrends" class="btn btn-outline-primary">';
+print '<i class="fas fa-chart-line"></i> Trend Analysis</button>';
+print '<button id="dashboardSettings" class="btn btn-outline-primary">';
+print '<i class="fas fa-cog"></i> Settings</button>';
 print '</div>';
 print '</div>';
 

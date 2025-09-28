@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Activity Tracker - Modern Dashboard Demo</title>
+    <link rel="stylesheet" href="assets/css/dashboard-modern.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: var(--secondary-bg, #f8f9fa);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .demo-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .demo-header h1 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        .demo-header p {
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Dark Mode Toggle -->
+        <button id="themeToggle" class="theme-toggle" title="Toggle Dark Mode">
+            <i class="fas fa-moon"></i>
+        </button>
+
+        <!-- Demo Header -->
+        <div class="demo-header">
+            <h1><i class="fas fa-chart-bar"></i> User Activity Tracker</h1>
+            <p>Modern Dashboard Demo - Enhanced UI/UX with Interactive Charts</p>
+        </div>
+
+        <!-- Modern Filter Panel -->
+        <div class="filter-panel">
+            <form method="get">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="mb-0"><i class="fas fa-filter"></i> Filters</h5>
+                    <div>
+                        <button type="button" id="refreshData" class="btn btn-outline-primary" style="margin-right: 10px;">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <label style="margin-right: 15px;">
+                            <input type="checkbox" id="autoRefresh" style="margin-right: 5px;"> Auto-refresh
+                        </label>
+                        <button type="button" id="advancedSearchToggle" class="btn btn-outline-primary">
+                            <i class="fas fa-chevron-down"></i> Show Advanced
+                        </button>
+                    </div>
+                </div>
+
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="from">From Date</label>
+                        <input type="date" name="from" id="from" value="2024-01-01">
+                    </div>
+                    <div class="filter-group">
+                        <label for="to">To Date</label>
+                        <input type="date" name="to" id="to" value="2024-01-31">
+                    </div>
+                    <div class="filter-group">
+                        <label for="search_action">Action</label>
+                        <input type="text" name="search_action" id="search_action" placeholder="e.g. COMPANY_CREATE">
+                    </div>
+                    <div class="filter-group">
+                        <label for="search_user">User</label>
+                        <input type="text" name="search_user" id="search_user" placeholder="Username">
+                    </div>
+                    <div class="filter-group">
+                        <label for="search_element">Element</label>
+                        <input type="text" name="search_element" id="search_element" placeholder="Element type">
+                    </div>
+                    <div class="filter-group">
+                        <label>&nbsp;</label>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Apply</button>
+                    </div>
+                </div>
+
+                <div id="advancedSearchPanel" style="display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="severity_filter">Severity</label>
+                            <select name="severity_filter" id="severity_filter">
+                                <option value="">All Severities</option>
+                                <option value="info">Info</option>
+                                <option value="warning">Warning</option>
+                                <option value="error">Error</option>
+                                <option value="notice">Notice</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="ip_filter">IP Address</label>
+                            <input type="text" name="ip_filter" id="ip_filter" placeholder="192.168.1.1">
+                        </div>
+                        <div class="filter-group">
+                            <label for="limit_results">Results Limit</label>
+                            <select name="limit_results" id="limit_results">
+                                <option value="20">20 results</option>
+                                <option value="50">50 results</option>
+                                <option value="100">100 results</option>
+                                <option value="200">200 results</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>&nbsp;</label>
+                            <button type="reset" class="btn btn-secondary"><i class="fas fa-times"></i> Clear All</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Modern Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <i class="fas fa-chart-bar stat-icon"></i>
+                <span class="stat-number" id="totalActivities">1,247</span>
+                <div class="stat-label">Total Activities</div>
+            </div>
+            <div class="stat-card success">
+                <i class="fas fa-users stat-icon"></i>
+                <span class="stat-number" id="activeUsers">23</span>
+                <div class="stat-label">Active Users</div>
+            </div>
+            <div class="stat-card info">
+                <i class="fas fa-cogs stat-icon"></i>
+                <span class="stat-number" id="uniqueActions">15</span>
+                <div class="stat-label">Unique Actions</div>
+            </div>
+            <div class="stat-card warning">
+                <i class="fas fa-calendar stat-icon"></i>
+                <span class="stat-number">31</span>
+                <div class="stat-label">Active Days</div>
+            </div>
+        </div>
+
+        <!-- Export and Control Buttons -->
+        <div class="text-center mb-4">
+            <div class="btn-group" role="group">
+                <button class="btn btn-success">
+                    <i class="fas fa-file-csv"></i> Export CSV
+                </button>
+                <button class="btn btn-success">
+                    <i class="fas fa-file-excel"></i> Export XLS
+                </button>
+                <button id="exportPDF" class="btn btn-outline-primary">
+                    <i class="fas fa-file-pdf"></i> Export PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- Modern Dashboard Cards with Charts -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+            <!-- Activity by Type Card with Chart -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <span><i class="fas fa-chart-pie"></i> Activity by Type</span>
+                </div>
+                <div class="card-body">
+                    <div style="display: grid; grid-template-columns: 1fr 300px; gap: 1rem; align-items: start;">
+                        <div class="chart-wrapper">
+                            <canvas id="activityTypeChart"></canvas>
+                        </div>
+                        <div>
+                            <table class="data-table activity-type-table">
+                                <thead>
+                                    <tr>
+                                        <th>Action</th>
+                                        <th style="text-align: right;">Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>COMPANY_CREATE</td><td style="text-align: right;">342 (27.4%)</td></tr>
+                                    <tr><td>USER_LOGIN</td><td style="text-align: right;">256 (20.5%)</td></tr>
+                                    <tr><td>INVOICE_CREATE</td><td style="text-align: right;">189 (15.2%)</td></tr>
+                                    <tr><td>CONTACT_MODIFY</td><td style="text-align: right;">145 (11.6%)</td></tr>
+                                    <tr><td>ORDER_VALIDATE</td><td style="text-align: right;">98 (7.9%)</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity by User Card with Chart -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <span><i class="fas fa-users"></i> Activity by User</span>
+                </div>
+                <div class="card-body">
+                    <div style="display: grid; grid-template-columns: 1fr 300px; gap: 1rem; align-items: start;">
+                        <div class="chart-wrapper">
+                            <canvas id="userActivityChart"></canvas>
+                        </div>
+                        <div>
+                            <table class="data-table user-activity-table">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th style="text-align: right;">Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>admin</td><td style="text-align: right;">423 (33.9%)</td></tr>
+                                    <tr><td>john.doe</td><td style="text-align: right;">289 (23.2%)</td></tr>
+                                    <tr><td>mary.smith</td><td style="text-align: right;">198 (15.9%)</td></tr>
+                                    <tr><td>sales.manager</td><td style="text-align: right;">145 (11.6%)</td></tr>
+                                    <tr><td>support.user</td><td style="text-align: right;">92 (7.4%)</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Second Row of Cards -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+            <!-- Element Type Card -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <span><i class="fas fa-cubes"></i> Activity by Element Type</span>
+                </div>
+                <div class="card-body">
+                    <table class="data-table element-type-table">
+                        <thead>
+                            <tr>
+                                <th>Element Type</th>
+                                <th style="text-align: right;">Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>societe</td><td style="text-align: right;">342 (27.4%)</td></tr>
+                            <tr><td>facture</td><td style="text-align: right;">189 (15.2%)</td></tr>
+                            <tr><td>contact</td><td style="text-align: right;">145 (11.6%)</td></tr>
+                            <tr><td>commande</td><td style="text-align: right;">98 (7.9%)</td></tr>
+                            <tr><td>user</td><td style="text-align: right;">76 (6.1%)</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Activities Card -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <span><i class="fas fa-history"></i> Recent Activities</span>
+                    <div>
+                        <button class="btn btn-outline-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body recent-activities-container">
+                    <div class="activity-item" style="display: flex; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500;">
+                                <a href="#" style="text-decoration: none; color: var(--primary-color);">COMPANY_CREATE</a>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                                <i class="fas fa-user"></i> john.doe | <i class="fas fa-cube"></i> societe
+                                <br><em>NEW_COMPANY_001</em>
+                            </div>
+                        </div>
+                        <div style="text-align: right; font-size: 0.75rem; color: var(--text-secondary);">
+                            <div>15/01</div>
+                            <div>14:32</div>
+                        </div>
+                    </div>
+                    <div class="activity-item" style="display: flex; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500;">
+                                <a href="#" style="text-decoration: none; color: var(--primary-color);">INVOICE_VALIDATE</a>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                                <i class="fas fa-user"></i> mary.smith | <i class="fas fa-cube"></i> facture
+                                <br><em>INV-2024-001</em>
+                            </div>
+                        </div>
+                        <div style="text-align: right; font-size: 0.75rem; color: var(--text-secondary);">
+                            <div>15/01</div>
+                            <div>14:28</div>
+                        </div>
+                    </div>
+                    <div class="activity-item" style="display: flex; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500;">
+                                <a href="#" style="text-decoration: none; color: var(--primary-color);">USER_LOGIN</a>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                                <i class="fas fa-user"></i> admin | <i class="fas fa-cube"></i> user
+                            </div>
+                        </div>
+                        <div style="text-align: right; font-size: 0.75rem; color: var(--text-secondary);">
+                            <div>15/01</div>
+                            <div>14:25</div>
+                        </div>
+                    </div>
+                    <div id="paginationControls" style="margin-top: 1rem;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Timeline Chart -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <span><i class="fas fa-chart-line"></i> Activity Timeline</span>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: 1fr 400px; gap: 2rem; align-items: start;">
+                    <div class="chart-wrapper">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                    <div>
+                        <table class="data-table timeline-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th style="text-align: right;">Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>15/01/2024</td>
+                                    <td style="text-align: right; position: relative;">
+                                        <span style="position: relative; z-index: 2;">45</span>
+                                        <div class="progress" style="margin-top: 0.25rem;">
+                                            <div class="progress-bar" style="width: 90%;"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>14/01/2024</td>
+                                    <td style="text-align: right; position: relative;">
+                                        <span style="position: relative; z-index: 2;">38</span>
+                                        <div class="progress" style="margin-top: 0.25rem;">
+                                            <div class="progress-bar" style="width: 76%;"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>13/01/2024</td>
+                                    <td style="text-align: right; position: relative;">
+                                        <span style="position: relative; z-index: 2;">42</span>
+                                        <div class="progress" style="margin-top: 0.25rem;">
+                                            <div class="progress-bar" style="width: 84%;"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/dashboard-modern.js"></script>
+    <script>
+        // Initialize demo charts with sample data
+        document.addEventListener('DOMContentLoaded', function() {
+            // Override the chart initialization for demo
+            setTimeout(function() {
+                if (window.dashboard && window.dashboard.charts) {
+                    // Initialize charts with demo data
+                    window.dashboard.setupDemoCharts();
+                }
+            }, 1000);
+        });
+
+        // Add demo chart setup method
+        if (typeof UserActivityDashboard !== 'undefined') {
+            UserActivityDashboard.prototype.setupDemoCharts = function() {
+                // Activity Type Chart
+                const activityCtx = document.getElementById('activityTypeChart');
+                if (activityCtx) {
+                    this.charts.activityType = new Chart(activityCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['COMPANY_CREATE', 'USER_LOGIN', 'INVOICE_CREATE', 'CONTACT_MODIFY', 'ORDER_VALIDATE'],
+                            datasets: [{
+                                data: [342, 256, 189, 145, 98],
+                                backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8'],
+                                borderWidth: 2,
+                                borderColor: '#fff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true } }
+                            }
+                        }
+                    });
+                }
+
+                // User Activity Chart
+                const userCtx = document.getElementById('userActivityChart');
+                if (userCtx) {
+                    this.charts.userActivity = new Chart(userCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['admin', 'john.doe', 'mary.smith', 'sales.manager', 'support.user'],
+                            datasets: [{
+                                label: 'Activities',
+                                data: [423, 289, 198, 145, 92],
+                                backgroundColor: 'rgba(0, 123, 255, 0.8)',
+                                borderColor: 'rgba(0, 123, 255, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                        }
+                    });
+                }
+
+                // Timeline Chart
+                const timelineCtx = document.getElementById('timelineChart');
+                if (timelineCtx) {
+                    this.charts.timeline = new Chart(timelineCtx, {
+                        type: 'line',
+                        data: {
+                            labels: ['Jan 11', 'Jan 12', 'Jan 13', 'Jan 14', 'Jan 15'],
+                            datasets: [{
+                                label: 'Daily Activity',
+                                data: [35, 40, 42, 38, 45],
+                                borderColor: '#28a745',
+                                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                        }
+                    });
+                }
+            };
+        }
+    </script>
+</body>
+</html>
