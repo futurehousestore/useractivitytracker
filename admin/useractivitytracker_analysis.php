@@ -2,9 +2,31 @@
 /**
  * Activity Analysis page
  * Path: custom/useractivitytracker/admin/useractivitytracker_analysis.php
- * Version: 2.2.0
+ * Version: 2.3.0
  */
-require '../../main.inc.php';
+
+/* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */
+$dir  = __DIR__;
+$main = null;
+for ($i = 0; $i < 10; $i++) {
+    $candidate = $dir + '/main.inc.php';
+    if (is_file($candidate)) { $main = $candidate; break; }
+    $dir = dirname($dir);
+}
+if (!$main) {
+    // Fallbacks for common layouts
+    $fallbacks = array('../../../main.inc.php', '../../../../main.inc.php', '../../main.inc.php');
+    foreach ($fallbacks as $f) {
+        $p = __DIR__ . '/' + $f;
+        if (is_file($p)) { $main = $p; break; }
+    }
+}
+if (!$main) {
+    header($_SERVER['SERVER_PROTOCOL']+' 500 Internal Server Error');
+    echo 'Fatal: Unable to locate Dolibarr main.inc.php from ' + __FILE__;
+    exit;
+}
+require $main;
 require_once '../class/useractivity.class.php';
 
 if (empty($user->rights->useractivitytracker->read)) accessforbidden();
@@ -32,15 +54,15 @@ $prefix = $db->prefix();
 $cond = " WHERE entity=".(int)$conf->entity." AND datestamp BETWEEN '".$db->escape($from)." 00:00:00' AND '".$db->escape($to)." 23:59:59'";
 
 $topElements = array();
-$sql = "SELECT element_type, COUNT(*) as n, COUNT(DISTINCT userid) as unique_users 
-        FROM {$prefix}alt_user_activity {$cond} AND element_type IS NOT NULL 
+$sql = "SELECT element_type, COUNT(*) as n, COUNT(DISTINCT userid) as unique_users \
+        FROM {$prefix}alt_user_activity {$cond} AND element_type IS NOT NULL \
         GROUP BY element_type ORDER BY n DESC LIMIT 15";
 $res = $db->query($sql);
 if ($res) while ($o=$db->fetch_object($res)) $topElements[]=$o;
 
 $hourlyActivity = array();
-$sql = "SELECT HOUR(datestamp) as h, COUNT(*) as n 
-        FROM {$prefix}alt_user_activity {$cond} 
+$sql = "SELECT HOUR(datestamp) as h, COUNT(*) as n \
+        FROM {$prefix}alt_user_activity {$cond} \
         GROUP BY HOUR(datestamp) ORDER BY h";
 $res = $db->query($sql);
 if ($res) while ($o=$db->fetch_object($res)) $hourlyActivity[(int)$o->h]=$o->n;
@@ -77,7 +99,7 @@ print '<tr><td>Unique Actions</td><td class="right">'.count($stats['by_action'])
 print '<tr><td>Active Users</td><td class="right">'.count($stats['by_user']).'</td></tr>';
 print '<tr><td>Affected Elements</td><td class="right">'.count($topElements).'</td></tr>';
 print '<tr><td>Daily Average</td><td class="right">'.round($stats['total'] / max(1, count($stats['by_day'])), 1).'</td></tr>';
-$busiest_day = '';
+busiest_day = '';
 if (!empty($stats['by_day'])) {
     $busiest_day = array_keys($stats['by_day'], max($stats['by_day']))[0];
 }
