@@ -2,7 +2,7 @@
 /**
  * Hooks class — User Activity Tracker (enhanced login/logout/page/action logging)
  * Path: custom/useractivitytracker/core/hooks/interface_99_modUserActivityTracker_Hooks.class.php
- * Version: 2.5.2 — payload cap, username column, idate usage, extra hook aliases
+ * Version: 2.7.0 — UAT_MASTER_ENABLED gate, entity scoping, parameterized queries
  */
 
 require_once DOL_DOCUMENT_ROOT . '/core/class/hookmanager.class.php';
@@ -143,6 +143,11 @@ class ActionsUserActivityTracker
     {
         global $conf, $user;
 
+        // MASTER switch (v2.7 - central gate)
+        if (function_exists('getDolGlobalInt') && !getDolGlobalInt('USERACTIVITYTRACKER_MASTER_ENABLED', 1)) {
+            return false;
+        }
+
         if (empty($conf->useractivitytracker->enabled)) return false;
 
         if (function_exists('getDolGlobalInt') && !getDolGlobalInt('USERACTIVITYTRACKER_ENABLE_TRACKING', 1)) {
@@ -171,6 +176,9 @@ class ActionsUserActivityTracker
     {
         global $user, $conf;
 
+        // MASTER switch (v2.7 - central gate, returns early if disabled)
+        if (function_exists('getDolGlobalInt') && !getDolGlobalInt('USERACTIVITYTRACKER_MASTER_ENABLED', 1)) return;
+        
         // Double-check toggles (cheap)
         if (function_exists('getDolGlobalInt') && !getDolGlobalInt('USERACTIVITYTRACKER_ENABLE_TRACKING', 1)) return;
         if (function_exists('getDolGlobalString') && !empty($user->id) && getDolGlobalString('USERACTIVITYTRACKER_SKIP_USER_' . (int)$user->id)) return;

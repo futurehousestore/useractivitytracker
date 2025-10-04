@@ -22,7 +22,7 @@ class modUserActivityTracker extends DolibarrModules
         $this->name         = 'useractivitytracker';
 
         $this->description  = 'Track and analyse user activity across Dolibarr';
-        $this->version      = '2.5.5';
+        $this->version      = '2.7.0';
         $this->const_name   = 'MAIN_MODULE_' . strtoupper($this->rights_class);
         $this->special      = 0;
         $this->picto        = 'title.svg@useractivitytracker';
@@ -59,7 +59,11 @@ class modUserActivityTracker extends DolibarrModules
 
         // constants on enable
         $this->const = array(
+            array('USERACTIVITYTRACKER_MASTER_ENABLED',   'chaine','1',     'Master tracking switch (0/1)',            1,''),
             array('USERACTIVITYTRACKER_RETENTION_DAYS',   'chaine','365',   'Retention in days',                       1,''),
+            array('USERACTIVITYTRACKER_PAYLOAD_MAX_BYTES','chaine','65536', 'Max payload size (bytes)',                1,''),
+            array('USERACTIVITYTRACKER_CAPTURE_IP',       'chaine','1',     'Capture IP addresses (0/1)',              1,''),
+            array('USERACTIVITYTRACKER_CAPTURE_PAYLOAD',  'chaine','full',  'Capture payload: off|truncated|full',     1,''),
             array('USERACTIVITYTRACKER_WEBHOOK_URL',      'chaine','',      'Webhook URL',                             1,''),
             array('USERACTIVITYTRACKER_WEBHOOK_SECRET',   'chaine','',      'Webhook secret (optional)',               1,''),
             array('USERACTIVITYTRACKER_ENABLE_ANOMALY',   'chaine','1',     'Enable anomaly heuristics (0/1)',         1,''),
@@ -196,8 +200,40 @@ class modUserActivityTracker extends DolibarrModules
     public function init($options = '')
     {
         $this->_load_tables('/useractivitytracker/sql/');
+        
+        // Run migration to add new indexes if upgrading
+        $this->runMigration();
+        
         $sql = array();
         return $this->_init($sql, $options);
+    }
+    
+    /**
+     * Migration logic for v2.7 - adds new indexes idempotently
+     */
+    private function runMigration()
+    {
+        $table = $this->db->prefix() . 'alt_user_activity';
+        
+        // Check if table exists first
+        $chk = $this->db->query("SHOW TABLES LIKE '" . $this->db->escape($table) . "'");
+        if (!$chk || $this->db->num_rows($chk) == 0) {
+            // Table doesn't exist yet, will be created by SQL file
+            return;
+        }
+        
+        // Add new indexes idempotently (MySQL silently ignores if exists via ALTER IGNORE)
+        $indexes = array(
+            "ALTER TABLE " . $table . " ADD INDEX IF NOT EXISTS idx_entity_datestamp (entity, datestamp)",
+            "ALTER TABLE " . $table . " ADD INDEX IF NOT EXISTS idx_entity_user_datestamp (entity, userid, datestamp)"
+        );
+        
+        foreach ($indexes as $sql) {
+            // Use DDL that works on older MySQL too
+            $sql_compat = str_replace('ADD INDEX IF NOT EXISTS', 'ADD INDEX', $sql);
+            // Try adding, ignore error if already exists
+            @$this->db->query($sql_compat);
+        }
     }
 
     /** Disable module */
