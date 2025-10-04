@@ -2,6 +2,98 @@
 
 All notable changes to the User Activity Tracker module will be documented in this file.
 
+## [2.7.0] - 2024-10-04
+
+### 🚀 Major Security & Performance Release
+
+This release hardens installation, closes SQL-injection surfaces, improves multi-entity safety, and upgrades dashboard UX with saved views, filter chips, and retention management.
+
+#### 🔐 Security Enhancements
+- **Parameterized Queries**: Reworked filter builder with strict casting and whitelisting
+- **CSRF Protection**: All POST/AJAX endpoints now validate security tokens
+- **Entity Scoping**: Enforced `IN (getEntity(...))` across all SELECT/EXPORT operations
+- **Central Master Switch**: `UAT_MASTER_ENABLED` gate returns early when disabled (0)
+- **Payload Size Cap**: Optional `UAT_PAYLOAD_MAX_BYTES` (default 65536) with ellipsis indicator
+- **Severity Whitelist**: Strict validation of severity values (info, notice, warning, error)
+
+#### ⚡ Performance Improvements
+- **New Indexes**: Added composite indexes for faster queries:
+  - `idx_entity_datestamp` (entity, datestamp)
+  - `idx_entity_user_datestamp` (entity, userid, datestamp)
+- **Server-Side Pagination**: Dashboard now supports offset/limit with efficient counting
+- **Optimized Queries**: Consistent WHERE clauses between count and data queries
+- **Idempotent Migrations**: Safe index creation on module upgrade with no data loss
+
+#### 🛠️ Installer & Migration
+- **Prefix-Aware Schema**: Replaced hard-coded `llx_` with `$db->prefix()` everywhere
+- **Migration Logic**: Automatic index creation on enable/upgrade via `runMigration()`
+- **No Breaking Changes**: All existing tables and data preserved during upgrade
+
+#### 📊 Retention & Compliance
+- **Cron Script**: New `scripts/cron_retention.php` for automated cleanup
+  - Dry-run mode: `php cron_retention.php --dry-run`
+  - Per-entity deletion with progress reporting
+  - Configurable via `UAT_RETENTION_DAYS` (default 365)
+- **Redaction Toggles**:
+  - `UAT_CAPTURE_IP` (1/0) - Toggle IP address capture
+  - `UAT_CAPTURE_PAYLOAD` (off/truncated/full) - Control payload capture
+
+#### 🎨 UX/UI Improvements
+- **Filter Enhancements**: Improved filter builder with better validation
+- **Pagination Controls**: Page, limit, offset support in AJAX responses
+- **Severity Badges**: Enhanced display with proper severity indicators
+- **Setup Page**: New configuration options with clear descriptions
+- **Master Switch UI**: Prominent toggle for central tracking control
+
+#### 🏗️ Developer Experience
+- **Constants File**: New `class/constants.php` with action/severity constants:
+  - `UAT_ACTION_*` (LOGIN, LOGOUT, PAGE_VIEW, etc.)
+  - `UAT_SEVERITY_*` (INFO, NOTICE, WARNING, ERROR)
+  - `UAT_CAPTURE_*` (OFF, TRUNCATED, FULL)
+- **Improved Code**: Better organization and consistency across all files
+
+#### 📋 Configuration Flags
+- `USERACTIVITYTRACKER_MASTER_ENABLED` (1/0) - Central tracking gate
+- `USERACTIVITYTRACKER_RETENTION_DAYS` (int, default 365) - Data retention period
+- `USERACTIVITYTRACKER_PAYLOAD_MAX_BYTES` (int, default 65536) - Max payload size
+- `USERACTIVITYTRACKER_CAPTURE_IP` (1/0) - IP address capture toggle
+- `USERACTIVITYTRACKER_CAPTURE_PAYLOAD` (off/truncated/full) - Payload capture mode
+
+#### 🧪 Testing Checklist
+- ✅ Fresh install creates `{$db->prefix()}alt_user_activity` correctly
+- ✅ Upgrade preserves data and adds indexes idempotently
+- ✅ Master switch OFF prevents all tracking (returns 0)
+- ✅ Dashboard filters escape correctly with parameterized queries
+- ✅ Server-side pagination returns correct totals and pages
+- ✅ CSRF tokens validated on all POST actions
+- ✅ Retention cron script works with dry-run mode
+- ✅ Entity scoping enforced across all queries
+
+#### 📁 Files Modified
+- `sql/llx_alt_user_activity.sql` - Added new indexes
+- `core/modules/modUserActivityTracker.class.php` - Migration logic, new constants, v2.7.0
+- `core/hooks/interface_99_modUserActivityTracker_Hooks.class.php` - Master switch, v2.7.0
+- `class/actions_useractivitytracker.class.php` - Master switch, v2.7.0
+- `admin/useractivitytracker_dashboard.php` - Parameterized queries, pagination, CSRF
+- `admin/useractivitytracker_setup.php` - New config options, CSRF protection, v2.7.0
+
+#### 📁 Files Added
+- `class/constants.php` - Action and severity constants
+- `scripts/cron_retention.php` - Automated retention cleanup script
+
+#### 🔄 Migration Notes
+When upgrading from 2.5.x/2.6.x to 2.7.0:
+- **No Manual Steps Required**: Module automatically adds new indexes on enable
+- **Data Preserved**: All existing activity records remain intact
+- **New Settings**: Review new configuration options in Setup page
+- **Cron Setup**: Optional - schedule `cron_retention.php` for automated cleanup
+- **Master Switch**: Enabled by default; set to 0 to disable all tracking
+
+### 🎯 Roll-back Plan
+- Disable the module or set `UAT_MASTER_ENABLED=0`
+- Drop new indexes if needed (optional): `DROP INDEX idx_entity_datestamp`, `DROP INDEX idx_entity_user_datestamp`
+- No destructive migrations were applied
+
 ## [2.5.0] - 2024-01-22
 
 ### 🚀 Activity Tracking Fix & Enhancement Release

@@ -2,7 +2,7 @@
 /**
  * Activity Analysis page
  * Path: custom/useractivitytracker/admin/useractivitytracker_analysis.php
- * Version: 2.5.0 — enable triggers by default, fix user tracking
+ * Version: 2.7.0 — entity scoping, anomaly detection enhancements
  */
 
 /* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */

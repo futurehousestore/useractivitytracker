@@ -2,7 +2,7 @@
 /**
  * Setup page
  * Path: custom/useractivitytracker/admin/useractivitytracker_setup.php
- * Version: 2.5.0 — enable triggers by default, fix user tracking
+ * Version: 2.7.0 — CSRF protection, new config options (master switch, capture toggles)
  */
 
 /* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */
@@ -43,24 +43,56 @@ $action = GETPOST('action','aZ09');
 
 /* ------------------------- Actions ------------------------- */
 if ($action === 'save') {
+    // CSRF protection
+    if (!verifCsrfToken(GETPOST('token', 'alpha'))) {
+        setEventMessage('Invalid security token. Please try again.', 'errors');
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
+    }
+    
+    // Master switch (v2.7)
+    dolibarr_set_const($db, 'USERACTIVITYTRACKER_MASTER_ENABLED', GETPOSTISSET('master_enabled')?'1':'0', 'chaine', 0, '', $conf->entity);
+    
+    // Retention & payload
     dolibarr_set_const($db, 'USERACTIVITYTRACKER_RETENTION_DAYS', max(1,(int)GETPOST('retention','int')), 'chaine', 0, '', $conf->entity);
+    dolibarr_set_const($db, 'USERACTIVITYTRACKER_PAYLOAD_MAX_BYTES', max(1024,(int)GETPOST('payload_max_bytes','int')), 'chaine', 0, '', $conf->entity);
+    
+    // Capture toggles (v2.7)
+    dolibarr_set_const($db, 'USERACTIVITYTRACKER_CAPTURE_IP', GETPOSTISSET('capture_ip')?'1':'0', 'chaine', 0, '', $conf->entity);
+    $capture_payload = GETPOST('capture_payload','aZ09');
+    if (!in_array($capture_payload, array('off','truncated','full'))) $capture_payload = 'full';
+    dolibarr_set_const($db, 'USERACTIVITYTRACKER_CAPTURE_PAYLOAD', $capture_payload, 'chaine', 0, '', $conf->entity);
+    
+    // Webhook
     dolibarr_set_const($db, 'USERACTIVITYTRACKER_WEBHOOK_URL',    trim(GETPOST('webhook','alphanohtml')), 'chaine', 0, '', $conf->entity);
     dolibarr_set_const($db, 'USERACTIVITYTRACKER_WEBHOOK_SECRET', trim(GETPOST('secret','alphanohtml')),   'chaine', 0, '', $conf->entity);
+    
+    // Other toggles
     dolibarr_set_const($db, 'USERACTIVITYTRACKER_ENABLE_ANOMALY', GETPOSTISSET('anomaly') ? '1' : '0',     'chaine', 0, '', $conf->entity);
     dolibarr_set_const($db, 'USERACTIVITYTRACKER_ENABLE_TRACKING', GETPOSTISSET('enable_tracking')?'1':'0', 'chaine', 0, '', $conf->entity);
     dolibarr_set_const($db, 'USERACTIVITYTRACKER_ENABLE_SESSION_TRACKING', GETPOSTISSET('session_tracking')?'1':'0', 'chaine', 0, '', $conf->entity);
     dolibarr_set_const($db, 'USERACTIVITYTRACKER_SKIP_SENSITIVE_DATA',     GETPOSTISSET('skip_sensitive')?'1':'0',    'chaine', 0, '', $conf->entity);
-    dolibarr_set_const($db, 'USERACTIVITYTRACKER_MAX_PAYLOAD_SIZE', max(1024,(int)GETPOST('max_payload_size','int')), 'chaine', 0, '', $conf->entity);
+    
+    // Legacy name compatibility
+    dolibarr_set_const($db, 'USERACTIVITYTRACKER_MAX_PAYLOAD_SIZE', max(1024,(int)GETPOST('payload_max_bytes','int')), 'chaine', 0, '', $conf->entity);
+    
     setEventMessage($langs->trans('SetupSaved'));
 }
 elseif ($action === 'testwebhook' && getDolGlobalString('USERACTIVITYTRACKER_WEBHOOK_URL')) {
+    // CSRF protection
+    if (!verifCsrfToken(GETPOST('token', 'alpha'))) {
+        setEventMessage('Invalid security token. Please try again.', 'errors');
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
+    }
+    
     $url  = getDolGlobalString('USERACTIVITYTRACKER_WEBHOOK_URL');
     $data = json_encode(array(
         'test'    => true,
         'message' => 'Test webhook from User Activity Tracker',
         'date'    => dol_print_date(dol_now(),'standard'),
         'entity'  => $conf->entity,
-        'version' => '2.5.0'
+        'version' => '2.7.0'
     ), JSON_UNESCAPED_SLASHES);
 
     if (function_exists('curl_init')) {
@@ -96,12 +128,26 @@ elseif ($action === 'testwebhook' && getDolGlobalString('USERACTIVITYTRACKER_WEB
     }
 }
 elseif ($action === 'cleanup') {
+    // CSRF protection
+    if (!verifCsrfToken(GETPOST('token', 'alpha'))) {
+        setEventMessage('Invalid security token. Please try again.', 'errors');
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
+    }
+    
     $activity = class_exists('UserActivity') ? new UserActivity($db) : null;
     $retention_days = getDolGlobalInt('USERACTIVITYTRACKER_RETENTION_DAYS', 365);
     $deleted = $activity ? (int)$activity->cleanOldActivities($retention_days, (int)$conf->entity) : 0;
     setEventMessage('Cleanup completed: '.$deleted.' records deleted');
 }
 elseif ($action === 'analyze_anomalies') {
+    // CSRF protection
+    if (!verifCsrfToken(GETPOST('token', 'alpha'))) {
+        setEventMessage('Invalid security token. Please try again.', 'errors');
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
+    }
+    
     if (getDolGlobalString('USERACTIVITYTRACKER_ENABLE_ANOMALY')) {
         $activity  = class_exists('UserActivity') ? new UserActivity($db) : null;
         $anomalies = $activity ? (array)$activity->detectAnomalies((int)$conf->entity) : array();
@@ -135,11 +181,21 @@ print '<input type="hidden" name="action" value="save">';
 print '<table class="noborder centpercent">';
 
 print '<tr class="liste_titre"><td colspan="2"><i class="fas fa-cogs"></i> General Settings</td></tr>';
+print '<tr><td class="titlefield"><i class="fas fa-toggle-on"></i> <strong>Master Tracking Switch</strong></td><td><input type="checkbox" name="master_enabled" '.(getDolGlobalInt('USERACTIVITYTRACKER_MASTER_ENABLED', 1)?'checked':'').'> <em><strong>v2.7:</strong> Central gate - disables ALL tracking when OFF</em></td></tr>';
 print '<tr><td class="titlefield"><i class="fas fa-power-off"></i> Enable user tracking</td><td><input type="checkbox" name="enable_tracking" '.(getDolGlobalInt('USERACTIVITYTRACKER_ENABLE_TRACKING', 1)?'checked':'').'> <em>Enable activity tracking for all users (disable to stop all tracking)</em></td></tr>';
 print '<tr><td class="titlefield"><i class="fas fa-calendar-alt"></i> Retention (days)</td><td><input class="flat" type="number" name="retention" min="1" value="'.dol_escape_htmltag($days).'"> <em>How long to keep activity data</em></td></tr>';
 print '<tr><td><i class="fas fa-user-clock"></i> Enable session tracking</td><td><input type="checkbox" name="session_tracking" '.(getDolGlobalString('USERACTIVITYTRACKER_ENABLE_SESSION_TRACKING')?'checked':'').'></td></tr>';
-print '<tr><td><i class="fas fa-user-shield"></i> Skip sensitive data</td><td><input type="checkbox" name="skip_sensitive" '.(getDolGlobalString('USERACTIVITYTRACKER_SKIP_SENSITIVE_DATA')?'checked':'').'></td></tr>';
-print '<tr><td><i class="fas fa-database"></i> Max payload size (bytes)</td><td><input class="flat" type="number" name="max_payload_size" min="1024" value="'.dol_escape_htmltag(getDolGlobalInt('USERACTIVITYTRACKER_MAX_PAYLOAD_SIZE', 65536)).'"></td></tr>';
+
+print '<tr class="liste_titre"><td colspan="2"><i class="fas fa-database"></i> Data Capture Settings (v2.7)</td></tr>';
+print '<tr><td><i class="fas fa-network-wired"></i> Capture IP addresses</td><td><input type="checkbox" name="capture_ip" '.(getDolGlobalInt('USERACTIVITYTRACKER_CAPTURE_IP', 1)?'checked':'').'> <em>Capture user IP addresses</em></td></tr>';
+print '<tr><td><i class="fas fa-file-code"></i> Capture payload</td><td><select name="capture_payload" class="flat">';
+$capture_mode = getDolGlobalString('USERACTIVITYTRACKER_CAPTURE_PAYLOAD', 'full');
+print '<option value="off"'.($capture_mode==='off'?' selected':'').'>Off - No payload capture</option>';
+print '<option value="truncated"'.($capture_mode==='truncated'?' selected':'').'>Truncated - Capture with size limit</option>';
+print '<option value="full"'.($capture_mode==='full'?' selected':'').'>Full - Capture everything</option>';
+print '</select></td></tr>';
+print '<tr><td><i class="fas fa-database"></i> Max payload size (bytes)</td><td><input class="flat" type="number" name="payload_max_bytes" min="1024" value="'.dol_escape_htmltag(getDolGlobalInt('USERACTIVITYTRACKER_PAYLOAD_MAX_BYTES', 65536)).'"> <em>Max size for JSON payloads</em></td></tr>';
+print '<tr><td><i class="fas fa-user-shield"></i> Skip sensitive data</td><td><input type="checkbox" name="skip_sensitive" '.(getDolGlobalString('USERACTIVITYTRACKER_SKIP_SENSITIVE_DATA')?'checked':'').'> <em>Filter passwords/tokens from logs</em></td></tr>';
 
 print '<tr class="liste_titre"><td colspan="2"><i class="fas fa-webhook"></i> Webhook Settings</td></tr>';
 print '<tr><td><i class="fas fa-link"></i> Webhook URL</td><td><input class="flat quatrevingtpercent" type="url" name="webhook" placeholder="https://your-webhook-endpoint.com/webhook" value="'.dol_escape_htmltag(getDolGlobalString('USERACTIVITYTRACKER_WEBHOOK_URL')).'"></td></tr>';

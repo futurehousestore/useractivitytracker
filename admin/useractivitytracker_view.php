@@ -2,7 +2,7 @@
 /**
  * Activity Details Viewer
  * Path: custom/useractivitytracker/admin/useractivitytracker_view.php
- * Version: 2.5.0 — enable triggers by default, fix user tracking
+ * Version: 2.7.0 — entity scoping, payload viewer enhancements
  */
 
 /* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */

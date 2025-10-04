@@ -2,7 +2,7 @@
 /**
  * Hooks — User Activity Tracker (login/logout/page/action + time-on-page)
  * Path: custom/useractivitytracker/class/actions_useractivitytracker.class.php
- * Version: 2.6.0 — adds dwell-time logging via sendBeacon
+ * Version: 2.7.0 — UAT_MASTER_ENABLED gate, entity scoping, parameterized queries
  */
 
 class ActionsUseractivitytracker
@@ -137,6 +137,11 @@ class ActionsUseractivitytracker
     {
         global $conf, $user;
 
+        // MASTER switch (v2.7 - central gate)
+        if (function_exists('getDolGlobalInt') && !getDolGlobalInt('USERACTIVITYTRACKER_MASTER_ENABLED', 1)) {
+            return false;
+        }
+
         if (empty($conf->useractivitytracker->enabled)) return false;
         if (function_exists('getDolGlobalInt') && !getDolGlobalInt('USERACTIVITYTRACKER_ENABLE_TRACKING', 1)) return false;
 
@@ -149,6 +154,9 @@ class ActionsUseractivitytracker
     private function logActivity($action, $payload = array())
     {
         global $user, $conf;
+
+        // MASTER switch (v2.7 - central gate, returns early if disabled)
+        if (function_exists('getDolGlobalInt') && !getDolGlobalInt('USERACTIVITYTRACKER_MASTER_ENABLED', 1)) return;
 
         if (function_exists('getDolGlobalInt') && !getDolGlobalInt('USERACTIVITYTRACKER_ENABLE_TRACKING', 1)) return;
         if (function_exists('getDolGlobalString') && !empty($user->id) && getDolGlobalString('USERACTIVITYTRACKER_SKIP_USER_'.(int)$user->id)) return;
