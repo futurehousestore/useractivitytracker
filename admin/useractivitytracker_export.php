@@ -2,7 +2,7 @@
 /**
  * Export Data page
  * Path: custom/useractivitytracker/admin/useractivitytracker_export.php
- * Version: 2.5.0 — enable triggers by default, fix user tracking
+ * Version: 2.7.0 — entity scoping, strict validation, severity badges
  */
 
 /* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */
@@ -32,17 +32,52 @@ require_once '../class/useractivity.class.php';
 if (empty($user->rights->useractivitytracker->export)) accessforbidden();
 
 $action = GETPOST('action','alpha');
-$from = GETPOST('from','alpha');
-$to = GETPOST('to','alpha');
-$search_action = GETPOST('search_action','alpha');
-$search_user = GETPOST('search_user','alpha');
-$search_element = GETPOST('search_element','alpha');
+$from = trim(GETPOST('from','alphanohtml'));
+$to = trim(GETPOST('to','alphanohtml'));
+$search_action = trim(GETPOST('search_action','alphanohtml'));
+$search_user = trim(GETPOST('search_user','alphanohtml'));
+$search_element = trim(GETPOST('search_element','alphanohtml'));
+$severity_filter = trim(GETPOST('severity_filter','alphanohtml'));
+
+// Validate severity
+$allowed_severity = array('info', 'notice', 'warning', 'error');
+if ($severity_filter !== '' && !in_array($severity_filter, $allowed_severity, true)) {
+    $severity_filter = '';
+}
 
 if (empty($from)) $from = dol_print_date(dol_time_plus_duree(dol_now(), -30, 'd'), '%Y-%m-%d');
 if (empty($to)) $to = dol_print_date(dol_now(), '%Y-%m-%d');
 
 llxHeader('', 'User Activity — Export Data');
 print load_fiche_titre('User Activity — Export Data', '', 'object_useractivitytracker@useractivitytracker');
+
+// Add severity badge styles (v2.7)
+print '<style>
+.uat-severity-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+.uat-severity-info {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+.uat-severity-notice {
+    background-color: #fff3e0;
+    color: #f57c00;
+}
+.uat-severity-warning {
+    background-color: #fff9c4;
+    color: #f57f17;
+}
+.uat-severity-error {
+    background-color: #ffebee;
+    color: #c62828;
+}
+</style>';
 
 print '<div class="fichecenter">';
 
@@ -67,8 +102,19 @@ print '</tr>';
 print '<tr>';
 print '<td>Search User</td>';
 print '<td><input type="text" name="search_user" value="'.dol_escape_htmltag($search_user).'" class="flat" placeholder="Username" size="20"></td>';
+print '<td>Severity</td>';
+print '<td><select name="severity_filter" class="flat">';
+print '<option value="">All</option>';
+print '<option value="info"'.($severity_filter==='info'?' selected':'').'>Info</option>';
+print '<option value="notice"'.($severity_filter==='notice'?' selected':'').'>Notice</option>';
+print '<option value="warning"'.($severity_filter==='warning'?' selected':'').'>Warning</option>';
+print '<option value="error"'.($severity_filter==='error'?' selected':'').'>Error</option>';
+print '</select></td>';
+print '</tr>';
+
+print '<tr>';
 print '<td>Search Element</td>';
-print '<td><input type="text" name="search_element" value="'.dol_escape_htmltag($search_element).'" class="flat" placeholder="e.g. thirdparty, invoice" size="15"></td>';
+print '<td colspan="3"><input type="text" name="search_element" value="'.dol_escape_htmltag($search_element).'" class="flat" placeholder="e.g. thirdparty, invoice" size="30"></td>';
 print '</tr>';
 
 print '<tr>';
@@ -83,21 +129,31 @@ print '</div>';
 
 print '<br>';
 
-// Export buttons
+// Export buttons with JSON/NDJSON support (v2.7)
 $export_base = dol_buildpath('/useractivitytracker/scripts/export.php', 1);
+$export_params = '&from='.urlencode($from).'&to='.urlencode($to)
+    .'&search_action='.urlencode($search_action).'&search_user='.urlencode($search_user)
+    .'&search_element='.urlencode($search_element).'&severity_filter='.urlencode($severity_filter);
+
 print '<div class="center">';
 print '<div class="inline-block" style="margin: 0 10px;">';
-print '<a class="butAction" href="'.$export_base.'?format=csv&from='.urlencode($from).'&to='.urlencode($to)
-    .'&search_action='.urlencode($search_action).'&search_user='.urlencode($search_user)
-    .'&search_element='.urlencode($search_element).'">';
+print '<a class="butAction" href="'.$export_base.'?format=csv'.$export_params.'">';
 print '<i class="fas fa-file-csv"></i> Export CSV</a>';
 print '</div>';
 
 print '<div class="inline-block" style="margin: 0 10px;">';
-print '<a class="butAction" href="'.$export_base.'?format=xls&from='.urlencode($from).'&to='.urlencode($to)
-    .'&search_action='.urlencode($search_action).'&search_user='.urlencode($search_user)
-    .'&search_element='.urlencode($search_element).'">';
+print '<a class="butAction" href="'.$export_base.'?format=xls'.$export_params.'">';
 print '<i class="fas fa-file-excel"></i> Export Excel</a>';
+print '</div>';
+
+print '<div class="inline-block" style="margin: 0 10px;">';
+print '<a class="butAction" href="'.$export_base.'?format=json'.$export_params.'">';
+print '<i class="fas fa-file-code"></i> Export JSON</a>';
+print '</div>';
+
+print '<div class="inline-block" style="margin: 0 10px;">';
+print '<a class="butAction" href="'.$export_base.'?format=ndjson'.$export_params.'">';
+print '<i class="fas fa-stream"></i> Export NDJSON</a>';
 print '</div>';
 print '</div>';
 
@@ -115,8 +171,9 @@ print '<th>IP</th>';
 print '<th>Severity</th>';
 print '</tr>';
 
-// Get preview data (limited to 20 rows)
-$cond = " WHERE entity=".(int)$conf->entity." AND datestamp BETWEEN '".$db->escape($from)." 00:00:00' AND '".$db->escape($to)." 23:59:59'";
+// Get preview data (limited to 20 rows) with strict entity scoping
+$entity = (int)$conf->entity;
+$cond = " WHERE entity=" . $entity . " AND datestamp BETWEEN '".$db->escape($from)." 00:00:00' AND '".$db->escape($to)." 23:59:59'";
 
 if (!empty($search_action)) {
     $cond .= " AND action LIKE '%".$db->escape($search_action)."%'";
@@ -126,6 +183,9 @@ if (!empty($search_user)) {
 }
 if (!empty($search_element)) {
     $cond .= " AND element_type LIKE '%".$db->escape($search_element)."%'";
+}
+if (!empty($severity_filter)) {
+    $cond .= " AND severity = '".$db->escape($severity_filter)."'";
 }
 
 $sql = "SELECT datestamp, action, element_type, username, ip, severity 
@@ -162,13 +222,9 @@ if ($num == 0) {
     while ($i < $num) {
         $obj = $db->fetch_object($res);
         
-        $severity_colors = array(
-            'info' => '#0984e3',
-            'notice' => '#6c5ce7', 
-            'warning' => '#fdcb6e',
-            'error' => '#d63031'
-        );
-        $color = $severity_colors[$obj->severity] ?? '#636e72';
+        // Severity badge (v2.7)
+        $sev = strtolower($obj->severity ?: 'info');
+        $sev_class = 'uat-severity-badge uat-severity-' . $sev;
         
         print '<tr class="oddeven">';
         print '<td>'.dol_print_date($db->jdate($obj->datestamp), 'dayhour').'</td>';
@@ -176,7 +232,7 @@ if ($num == 0) {
         print '<td>'.dol_escape_htmltag($obj->element_type ?: 'N/A').'</td>';
         print '<td>'.dol_escape_htmltag($obj->username ?: 'N/A').'</td>';
         print '<td>'.dol_escape_htmltag($obj->ip ?: 'N/A').'</td>';
-        print '<td><span style="color: '.$color.'; font-weight: bold;">'.strtoupper($obj->severity ?: 'INFO').'</span></td>';
+        print '<td><span class="'.$sev_class.'">'.strtoupper($sev).'</span></td>';
         print '</tr>';
         $i++;
     }
