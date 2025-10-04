@@ -2,7 +2,7 @@
 /**
  * Module descriptor — User Activity Tracker
  * Path: custom/useractivitytracker/core/modules/modUserActivityTracker.class.php
- * Version: 2.5.0 — enable triggers by default, fix user tracking
+ * Version: 2.5.5 — force module name, explicit hook contexts, triggers on
  */
 
 require_once DOL_DOCUMENT_ROOT . '/core/modules/DolibarrModules.class.php';
@@ -11,56 +11,70 @@ class modUserActivityTracker extends DolibarrModules
 {
     public function __construct($db)
     {
-        global $langs, $conf;
         parent::__construct($db);
 
         $this->db           = $db;
-        $this->numero       = 990501; // random large id avoiding collisions
+        $this->numero       = 990501;                       // arbitrary id avoiding collisions
         $this->rights_class = 'useractivitytracker';
         $this->family       = 'technic';
-        $this->name         = preg_replace('/^mod/i', '', get_class($this));
+
+        // IMPORTANT: force exact folder name so HookManager resolves paths on case-sensitive FS
+        $this->name         = 'useractivitytracker';
+
         $this->description  = 'Track and analyse user activity across Dolibarr';
-        $this->version      = '2.5.1';
+        $this->version      = '2.5.5';
         $this->const_name   = 'MAIN_MODULE_' . strtoupper($this->rights_class);
         $this->special      = 0;
         $this->picto        = 'title.svg@useractivitytracker';
 
-        // Parts
         $this->module_parts = array(
             'triggers' => 1,
-            'hooks' => array('all'), // Enable comprehensive hooks for login/logout and other activities
+            'hooks'    => array(
+                // Authentication
+                'login',
+                // Global/UI
+                'global','main','toprightmenu','admin',
+                // Common objects/cards where users act
+                'usercard','thirdpartycard','societeagenda',
+                'invoicecard','propalcard','ordercard',
+                'productcard','stockproduct','stock','agenda',
+                // Footer / page lifecycle
+                'formObjectOptions','printCommonFooter'
+            )
         );
 
-        // Create these dirs at enable time (relative to htdocs/custom)
+        // create on enable (relative to htdocs/custom)
         $this->dirs = array('/useractivitytracker/');
 
-        // Config pages
+        // setup page
         $this->config_page_url = array('useractivitytracker_setup.php@useractivitytracker');
 
-        // Compatibility
-        $this->depends               = array();
-        $this->conflictwith          = array();
-        $this->phpmin                = array(7, 4);
-        $this->need_dolibarr_version = array(14, 0); // tested up to 22.x
+        // compatibility
+        $this->phpmin                = '7.4';
+        $this->need_dolibarr_version = '14.0';
         $this->langfiles             = array('useractivitytracker@useractivitytracker');
 
-        // Constants installed on enable
+        $this->depends      = array();
+        $this->conflictwith = array();
+
+        // constants on enable
         $this->const = array(
-            array('USERACTIVITYTRACKER_RETENTION_DAYS', 'chaine', '365', 'Retention in days',               1, ''),
-            array('USERACTIVITYTRACKER_WEBHOOK_URL',    'chaine', '',    'Webhook URL',                     1, ''),
-            array('USERACTIVITYTRACKER_WEBHOOK_SECRET', 'chaine', '',    'Webhook secret (optional)',       1, ''),
-            array('USERACTIVITYTRACKER_ENABLE_ANOMALY', 'chaine', '1',   'Enable anomaly heuristics (0/1)', 1, ''),
-            array('USERACTIVITYTRACKER_ENABLE_TRACKING', 'chaine', '1',  'Enable user tracking by default (0/1)', 1, ''),
+            array('USERACTIVITYTRACKER_RETENTION_DAYS',   'chaine','365',   'Retention in days',                       1,''),
+            array('USERACTIVITYTRACKER_WEBHOOK_URL',      'chaine','',      'Webhook URL',                             1,''),
+            array('USERACTIVITYTRACKER_WEBHOOK_SECRET',   'chaine','',      'Webhook secret (optional)',               1,''),
+            array('USERACTIVITYTRACKER_ENABLE_ANOMALY',   'chaine','1',     'Enable anomaly heuristics (0/1)',         1,''),
+            array('USERACTIVITYTRACKER_ENABLE_TRACKING',  'chaine','1',     'Enable user tracking by default (0/1)',   1,''),
+            array('USERACTIVITYTRACKER_MAX_PAYLOAD_SIZE', 'chaine','65536', 'Max JSON payload size (bytes)',           1,'')
         );
 
-        // Rights
+        // rights
         $this->rights = array();
         $r = 0;
 
         $this->rights[$r][0] = 99050101;
         $this->rights[$r][1] = 'Read activity dashboard';
         $this->rights[$r][2] = 'r';
-        $this->rights[$r][3] = 1; // granted to admin on install
+        $this->rights[$r][3] = 1;
         $this->rights[$r][4] = 'read';
         $r++;
 
@@ -78,18 +92,16 @@ class modUserActivityTracker extends DolibarrModules
         $this->rights[$r][4] = 'admin';
         $r++;
 
-        // ---------------------------
-        // Menus (do NOT prefix with /custom; Dolibarr resolves it)
-        // ---------------------------
+        // menus (no /custom prefix)
         $this->menu = array();
 
-        // Top: Activity Tracker
+        // top
         $this->menu[] = array(
-            'fk_menu'  => 0,                      // <— TOP MENU: must be 0
+            'fk_menu'  => 0,
             'type'     => 'top',
             'titre'    => 'Activity Tracker',
             'mainmenu' => $this->rights_class,
-            'leftmenu' => '',                     // no left key at top level
+            'leftmenu' => '',
             'url'      => '/useractivitytracker/admin/useractivitytracker_dashboard.php',
             'langs'    => 'useractivitytracker@useractivitytracker',
             'position' => 55,
@@ -99,9 +111,9 @@ class modUserActivityTracker extends DolibarrModules
             'user'     => 2
         );
 
-        // Left: Dashboard
+        // left: dashboard
         $this->menu[] = array(
-            'fk_menu'  => 'fk_mainmenu='.$this->rights_class,   // <— LEFT under our top
+            'fk_menu'  => 'fk_mainmenu='.$this->rights_class,
             'type'     => 'left',
             'titre'    => 'Dashboard',
             'mainmenu' => $this->rights_class,
@@ -115,7 +127,7 @@ class modUserActivityTracker extends DolibarrModules
             'user'     => 2
         );
 
-        // Left: Settings
+        // left: settings
         $this->menu[] = array(
             'fk_menu'  => 'fk_mainmenu='.$this->rights_class,
             'type'     => 'left',
@@ -131,7 +143,7 @@ class modUserActivityTracker extends DolibarrModules
             'user'     => 2
         );
 
-        // Left: Export
+        // left: export
         $this->menu[] = array(
             'fk_menu'  => 'fk_mainmenu='.$this->rights_class,
             'type'     => 'left',
@@ -147,7 +159,7 @@ class modUserActivityTracker extends DolibarrModules
             'user'     => 2
         );
 
-        // Left: Analysis
+        // left: analysis
         $this->menu[] = array(
             'fk_menu'  => 'fk_mainmenu='.$this->rights_class,
             'type'     => 'left',
@@ -163,7 +175,7 @@ class modUserActivityTracker extends DolibarrModules
             'user'     => 2
         );
 
-        // Optional: legacy Tools menu
+        // optional legacy tools
         $this->menu[] = array(
             'fk_menu'  => 'fk_mainmenu=tools',
             'type'     => 'left',
@@ -180,26 +192,18 @@ class modUserActivityTracker extends DolibarrModules
         );
     }
 
-    /**
-     * Enable module
-     */
+    /** Enable module */
     public function init($options = '')
     {
-        // Load SQL from /useractivitytracker/sql/ if present
         $this->_load_tables('/useractivitytracker/sql/');
-
-        // Register constants, rights, menus, boxes, cron, etc.
-        $sql = array(); // extra SQL statements if needed
+        $sql = array();
         return $this->_init($sql, $options);
     }
 
-    /**
-     * Disable module
-     */
+    /** Disable module */
     public function remove($options = '')
     {
-        // Keep DB tables by default. Remove framework artifacts.
-        $sql = array(); // extra cleanup SQL if needed
+        $sql = array();
         return $this->_remove($sql, $options);
     }
 }
