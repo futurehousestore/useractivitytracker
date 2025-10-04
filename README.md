@@ -1,12 +1,25 @@
 # User Activity Tracker (Dolibarr Module)
 
-**Version:** 2.5.0
+**Version:** 2.7.0
 **Compatibility:** Dolibarr 14.0+ to 22.0.0+, PHP 7.4+
 **Namespace/Dir:** `custom/useractivitytracker`
 
 Track user activity across Dolibarr with a comprehensive dashboard, advanced analytics, CSV/XLS export, webhook alerts, anomaly detection, and retention cleanup.
 
-## ✨ New in v2.5.0
+## ✨ New in v2.7.0
+
+- **🔐 Enhanced Security**: Parameterized queries, CSRF protection, strict input validation, entity scoping enforcement
+- **🚀 Performance Boost**: New composite indexes (entity+datestamp, entity+userid+datestamp) for faster queries
+- **📊 Server-Side Pagination**: Efficient handling of large datasets with configurable page sizes
+- **🎛️ Master Tracking Switch**: Central `UAT_MASTER_ENABLED` gate across all triggers and hooks
+- **⚙️ Idempotent Migrations**: Safe index creation on upgrade with no data loss
+- **🔒 Privacy Controls**: Granular capture toggles for IP addresses and payloads (off/truncated/full)
+- **⏱️ Retention Management**: Automated cron script for purging old records with dry-run mode
+- **📏 Payload Caps**: Configurable `UAT_PAYLOAD_MAX_BYTES` with ellipsis indicators
+- **🏗️ DX Improvements**: Constants for actions/severity, cleaner code organization
+- **📋 Config Flags**: `MASTER_ENABLED`, `RETENTION_DAYS`, `PAYLOAD_MAX_BYTES`, `CAPTURE_IP`, `CAPTURE_PAYLOAD`
+
+## ✨ Previous Features (v2.5.0)
 
 - **🔧 Activity Tracking Fixed**: Resolved the core issue where no activity data was being tracked due to default configuration
 - **🎛️ Master Tracking Switch**: Added global toggle to enable/disable all user activity tracking
@@ -101,13 +114,26 @@ Disable module → the table will **not** be dropped by default (safety). You ca
 - `sql/llx_alt_user_activity.sql` — database table definition
 - `langs/useractivitytracker.lang` — language strings (English)
 
-## Configuration Options
-- **Retention Period**: Configure how long to keep activity data (default: 365 days)
+## Configuration Options (v2.7)
+- **Master Switch**: `USERACTIVITYTRACKER_MASTER_ENABLED` - Central gate to disable all tracking (default: 1)
+- **Retention Period**: `USERACTIVITYTRACKER_RETENTION_DAYS` - How long to keep data (default: 365 days)
+- **Payload Capture**: `USERACTIVITYTRACKER_CAPTURE_PAYLOAD` - off/truncated/full (default: full)
+- **Payload Size Limit**: `USERACTIVITYTRACKER_PAYLOAD_MAX_BYTES` - Max JSON size (default: 65536)
+- **IP Capture**: `USERACTIVITYTRACKER_CAPTURE_IP` - Capture IP addresses (default: 1)
 - **Session Tracking**: Enhanced tracking with user agent and request context
 - **Sensitive Data Filtering**: Automatically filter passwords and tokens from logs
-- **Payload Size Limits**: Control maximum JSON payload size to prevent database issues
 - **Webhook Integration**: Real-time notifications with HMAC signatures and retry logic
 - **Anomaly Detection**: Automatic detection of suspicious activities and bulk operations
+
+### Cron Job for Retention
+Schedule automatic cleanup:
+```bash
+# Daily at 2 AM
+0 2 * * * php /path/to/htdocs/custom/useractivitytracker/scripts/cron_retention.php
+
+# Dry run first to preview
+php cron_retention.php --dry-run
+```
 
 ## Webhook Format
 ```json
@@ -126,17 +152,23 @@ Disable module → the table will **not** be dropped by default (safety). You ca
 }
 ```
 
-## Security Features
+## Security Features (v2.7 Enhanced)
+- **CSRF Protection**: All POST/AJAX endpoints validate security tokens
+- **Parameterized Queries**: Strict casting and whitelisting in filter builders
+- **Entity Scoping**: All queries enforce entity boundaries for multi-entity safety
 - **Anomaly Detection**: Detects unusual login patterns and bulk operations
 - **Sensitive Data Protection**: Filters passwords, tokens from activity logs
-- **IP Tracking**: Enhanced IP detection with X-Forwarded-For support
+- **IP Tracking**: Enhanced IP detection with X-Forwarded-For support (configurable)
 - **Session Monitoring**: Tracks user sessions and request context
 - **Webhook Security**: HMAC-SHA256 signatures for webhook authentication
 
-## Performance Considerations
-- Automatic cleanup based on retention settings
+## Performance Considerations (v2.7 Enhanced)
+- **New Indexes**: Composite indexes on (entity, datestamp) and (entity, userid, datestamp)
+- **Server-Side Pagination**: Efficient handling of millions of records
+- Automatic cleanup based on retention settings (cron script provided)
 - Optimized database queries with proper indexing
 - Payload size limits to prevent memory issues
+- Efficient count queries with same WHERE clause as data queries
 - Efficient data structures for large datasets
 - Background cleanup during regular usage
 
