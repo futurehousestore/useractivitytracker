@@ -44,7 +44,7 @@ $action = GETPOST('action','aZ09');
 /* ------------------------- Actions ------------------------- */
 if ($action === 'save') {
     // CSRF protection
-    if (!verifCsrfToken(GETPOST('token', 'alpha'))) {
+    if (!isset($_SESSION['newtoken']) || !GETPOST('token', 'alpha') || $_SESSION['newtoken'] !== GETPOST('token', 'alpha')) {
         setEventMessage('Invalid security token. Please try again.', 'errors');
         header('Location: ' . $_SERVER['PHP_SELF']);
         exit;
@@ -80,7 +80,7 @@ if ($action === 'save') {
 }
 elseif ($action === 'testwebhook' && getDolGlobalString('USERACTIVITYTRACKER_WEBHOOK_URL')) {
     // CSRF protection
-    if (!verifCsrfToken(GETPOST('token', 'alpha'))) {
+    if (!isset($_SESSION['newtoken']) || !GETPOST('token', 'alpha') || $_SESSION['newtoken'] !== GETPOST('token', 'alpha')) {
         setEventMessage('Invalid security token. Please try again.', 'errors');
         header('Location: ' . $_SERVER['PHP_SELF']);
         exit;
@@ -129,7 +129,7 @@ elseif ($action === 'testwebhook' && getDolGlobalString('USERACTIVITYTRACKER_WEB
 }
 elseif ($action === 'cleanup') {
     // CSRF protection
-    if (!verifCsrfToken(GETPOST('token', 'alpha'))) {
+    if (!isset($_SESSION['newtoken']) || !GETPOST('token', 'alpha') || $_SESSION['newtoken'] !== GETPOST('token', 'alpha')) {
         setEventMessage('Invalid security token. Please try again.', 'errors');
         header('Location: ' . $_SERVER['PHP_SELF']);
         exit;
@@ -142,7 +142,7 @@ elseif ($action === 'cleanup') {
 }
 elseif ($action === 'analyze_anomalies') {
     // CSRF protection
-    if (!verifCsrfToken(GETPOST('token', 'alpha'))) {
+    if (!isset($_SESSION['newtoken']) || !GETPOST('token', 'alpha') || $_SESSION['newtoken'] !== GETPOST('token', 'alpha')) {
         setEventMessage('Invalid security token. Please try again.', 'errors');
         header('Location: ' . $_SERVER['PHP_SELF']);
         exit;
