@@ -16,7 +16,7 @@ class InterfaceUserActivityTrackerTrigger extends DolibarrTriggers
 
     public $family      = 'user';
     public $description = 'Logs Dolibarr triggers into alt_user_activity';
-    public $version     = '2.5.5';
+    public $version     = '2.7.0';
     public $name        = 'InterfaceUserActivityTrackerTrigger';
     public $picto       = 'useractivitytracker@useractivitytracker';
 
