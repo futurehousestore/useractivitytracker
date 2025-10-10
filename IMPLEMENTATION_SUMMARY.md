@@ -30,7 +30,7 @@ All critical features from the problem statement have been successfully implemen
 #### CSRF Protection
 - Added token validation to all POST actions in:
   - `admin/useractivitytracker_setup.php` (save, testwebhook, cleanup, analyze_anomalies)
-- Uses Dolibarr's `verifCsrfToken()` function
+- Uses standard session-based token validation (`$_SESSION['newtoken']`)
 - Invalid tokens redirect with error message
 
 #### Entity Scoping
