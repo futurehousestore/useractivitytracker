@@ -2,7 +2,7 @@
 /**
  * Cron script for User Activity Tracker retention cleanup
  * Path: custom/useractivitytracker/scripts/cron_retention.php
- * Version: 2.7.0 — purge rows older than UAT_RETENTION_DAYS
+ * Version: 2.8.0 — purge rows older than UAT_RETENTION_DAYS
  * 
  * Usage: php cron_retention.php [--dry-run]
  * 

@@ -2,7 +2,7 @@
 /**
  * Dashboard page
  * Path: custom/useractivitytracker/admin/useractivitytracker_dashboard.php
- * Version: 2.7.0 — parameterized queries, CSRF protection, server-side pagination, entity scoping
+ * Version: 2.8.0 — parameterized queries, CSRF protection, server-side pagination, entity scoping
  */
 
 /* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */

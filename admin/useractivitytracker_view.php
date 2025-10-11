@@ -2,7 +2,7 @@
 /**
  * Activity Details Viewer
  * Path: custom/useractivitytracker/admin/useractivitytracker_view.php
- * Version: 2.7.0 — entity scoping, payload viewer enhancements
+ * Version: 2.8.0 — entity scoping, payload viewer enhancements
  */
 
 /* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */

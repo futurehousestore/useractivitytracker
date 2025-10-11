@@ -2,7 +2,7 @@
 /**
  * Module descriptor — User Activity Tracker
  * Path: custom/useractivitytracker/core/modules/modUserActivityTracker.class.php
- * Version: 2.7.0 — force module name, explicit hook contexts, triggers on
+ * Version: 2.8.0 — Unified config checks, robust error handling, event deduplication
  */
 
 require_once DOL_DOCUMENT_ROOT . '/core/modules/DolibarrModules.class.php';
@@ -22,7 +22,7 @@ class modUserActivityTracker extends DolibarrModules
         $this->name         = 'useractivitytracker';
 
         $this->description  = 'Track and analyse user activity across Dolibarr';
-        $this->version      = '2.7.0';
+        $this->version      = '2.8.0';
         $this->const_name   = 'MAIN_MODULE_' . strtoupper($this->rights_class);
         $this->special      = 0;
         $this->picto        = 'title.svg@useractivitytracker';

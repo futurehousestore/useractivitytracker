@@ -1,12 +1,22 @@
 # User Activity Tracker (Dolibarr Module)
 
-**Version:** 2.7.0
+**Version:** 2.8.0
 **Compatibility:** Dolibarr 14.0+ to 22.0.0+, PHP 7.4+
 **Namespace/Dir:** `custom/useractivitytracker`
 
 Track user activity across Dolibarr with a comprehensive dashboard, advanced analytics, CSV/XLS export, webhook alerts, anomaly detection, and retention cleanup.
 
-## ✨ New in v2.7.0
+## ✨ New in v2.8.0
+
+- **🔧 Unified Configuration Checks**: Standardized configuration checking across triggers and hooks for consistency
+- **🛡️ Robust Error Handling**: Added try/catch blocks for all database operations with graceful degradation
+- **🔄 Event Deduplication**: Prevents duplicate logging between triggers and hooks using a time-based cache
+- **⚙️ Enhanced Configuration Coordination**: Proper coordination between MASTER_ENABLED and ENABLE_TRACKING switches
+- **📝 Improved Logging**: Better error messages and logging for troubleshooting database issues
+- **🎯 Race Condition Prevention**: Deduplication mechanism prevents race conditions between trigger and hook logging
+- **💪 Graceful Degradation**: Module continues to function even if logging fails, with proper error logging
+
+## ✨ Previous Features (v2.7.0)
 
 - **🔐 Enhanced Security**: Parameterized queries, CSRF protection, strict input validation, entity scoping enforcement
 - **🚀 Performance Boost**: New composite indexes (entity+datestamp, entity+userid+datestamp) for faster queries

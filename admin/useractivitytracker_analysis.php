@@ -2,7 +2,7 @@
 /**
  * Activity Analysis page
  * Path: custom/useractivitytracker/admin/useractivitytracker_analysis.php
- * Version: 2.7.0 — entity scoping, anomaly detection enhancements
+ * Version: 2.8.0 — entity scoping, anomaly detection enhancements
  */
 
 /* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */

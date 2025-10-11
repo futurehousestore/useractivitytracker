@@ -2,7 +2,7 @@
 /**
  * Setup page
  * Path: custom/useractivitytracker/admin/useractivitytracker_setup.php
- * Version: 2.7.0 — CSRF protection, new config options (master switch, capture toggles)
+ * Version: 2.8.0 — CSRF protection, new config options (master switch, capture toggles)
  */
 
 /* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */
@@ -240,7 +240,7 @@ if (class_exists('UserActivity')) {
     $by_user   = (array)($stats['by_user'] ?? array());
 }
 
-print '<tr><td class="titlefield"><i class="fas fa-tag"></i> Module Version</td><td><strong>2.7.0</strong></td></tr>';
+print '<tr><td class="titlefield"><i class="fas fa-tag"></i> Module Version</td><td><strong>2.8.0</strong></td></tr>';
 print '<tr><td><i class="fas fa-chart-line"></i> Total Activities (last 30 days)</td><td><strong>'.$tot.'</strong></td></tr>';
 print '<tr><td><i class="fas fa-tasks"></i> Unique Actions (last 30 days)</td><td><strong>'.count($by_action).'</strong></td></tr>';
 print '<tr><td><i class="fas fa-users"></i> Active Users (last 30 days)</td><td><strong>'.count($by_user).'</strong></td></tr>';
