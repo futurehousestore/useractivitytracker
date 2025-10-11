@@ -1,12 +1,25 @@
 # User Activity Tracker (Dolibarr Module)
 
-**Version:** 2.8.0
+**Version:** 2.8.1
 **Compatibility:** Dolibarr 14.0+ to 22.0.0+, PHP 7.4+
 **Namespace/Dir:** `custom/useractivitytracker`
 
 Track user activity across Dolibarr with a comprehensive dashboard, advanced analytics, CSV/XLS export, webhook alerts, anomaly detection, and retention cleanup.
 
-## ✨ New in v2.8.0
+## ✨ New in v2.8.1
+
+- **📋 Canonical Table Names**: Migrated from `alt_user_activity` to `useractivitytracker_activity` and `useractivitytracker_log`
+- **🔄 Automatic Migration**: Safe automatic data migration from legacy tables on first use
+- **🏗️ UserActivityTables Helper**: DRY helper class for consistent table name usage across all code
+- **🔧 Schema Improvements**: Updated schema with proper column names (`fk_user`, `element_id` instead of `userid`, `object_id`)
+- **📦 Installation SQL**: New `install.sql` with canonical table definitions
+- **⬆️ Upgrade Path**: Automatic migration via trigger with column intersection for safety
+- **🎯 Entity Scoping**: All tables properly entity-scoped with `entity` column
+- **📚 Migration Guide**: Comprehensive documentation for upgrade process
+
+See [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) for details on upgrading from v2.8.0 or earlier.
+
+## ✨ Features in v2.8.0
 
 - **🔧 Unified Configuration Checks**: Standardized configuration checking across triggers and hooks for consistency
 - **🛡️ Robust Error Handling**: Added try/catch blocks for all database operations with graceful degradation
