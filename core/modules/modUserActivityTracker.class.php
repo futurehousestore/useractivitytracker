@@ -2,7 +2,7 @@
 /**
  * Module descriptor — User Activity Tracker
  * Path: custom/useractivitytracker/core/modules/modUserActivityTracker.class.php
- * Version: 2.8.0 — Unified config checks, robust error handling, event deduplication
+ * Version: 2.8.1-fix1 — Deterministic logging via single hook; clean contexts; module-scoped table
  */
 
 require_once DOL_DOCUMENT_ROOT . '/core/modules/DolibarrModules.class.php';
@@ -22,24 +22,22 @@ class modUserActivityTracker extends DolibarrModules
         $this->name         = 'useractivitytracker';
 
         $this->description  = 'Track and analyse user activity across Dolibarr';
-        $this->version      = '2.8.0';
+        $this->version      = '2.8.1-fix1';
         $this->const_name   = 'MAIN_MODULE_' . strtoupper($this->rights_class);
         $this->special      = 0;
         $this->picto        = 'title.svg@useractivitytracker';
 
+        /* Register only contexts (not method names). Disable triggers to avoid double logging. */
         $this->module_parts = array(
-            'triggers' => 1,
-            'hooks'    => array(
-                // Authentication
+            'triggers' => 0,
+            'hooks' => array(
+                // Auth
                 'login',
-                // Global/UI
-                'global','main','toprightmenu','admin',
-                // Common objects/cards where users act
-                'usercard','thirdpartycard','societeagenda',
-                'invoicecard','propalcard','ordercard',
-                'productcard','stockproduct','stock','agenda',
-                // Footer / page lifecycle
-                'formObjectOptions','printCommonFooter'
+                // Global/common pages
+                'global','main','admin','toprightmenu',
+                // Popular cards where doActions is invoked
+                'thirdpartycard','usercard','invoicecard','propalcard','ordercard',
+                'productcard','stock','stockproduct','agenda'
             )
         );
 
@@ -57,19 +55,10 @@ class modUserActivityTracker extends DolibarrModules
         $this->depends      = array();
         $this->conflictwith = array();
 
-        // constants on enable
-        $this->const = array(
-            array('USERACTIVITYTRACKER_MASTER_ENABLED',   'chaine','1',     'Master tracking switch (0/1)',            1,''),
-            array('USERACTIVITYTRACKER_RETENTION_DAYS',   'chaine','365',   'Retention in days',                       1,''),
-            array('USERACTIVITYTRACKER_PAYLOAD_MAX_BYTES','chaine','65536', 'Max payload size (bytes)',                1,''),
-            array('USERACTIVITYTRACKER_CAPTURE_IP',       'chaine','1',     'Capture IP addresses (0/1)',              1,''),
-            array('USERACTIVITYTRACKER_CAPTURE_PAYLOAD',  'chaine','full',  'Capture payload: off|truncated|full',     1,''),
-            array('USERACTIVITYTRACKER_WEBHOOK_URL',      'chaine','',      'Webhook URL',                             1,''),
-            array('USERACTIVITYTRACKER_WEBHOOK_SECRET',   'chaine','',      'Webhook secret (optional)',               1,''),
-            array('USERACTIVITYTRACKER_ENABLE_ANOMALY',   'chaine','1',     'Enable anomaly heuristics (0/1)',         1,''),
-            array('USERACTIVITYTRACKER_ENABLE_TRACKING',  'chaine','1',     'Enable user tracking by default (0/1)',   1,''),
-            array('USERACTIVITYTRACKER_MAX_PAYLOAD_SIZE', 'chaine','65536', 'Max JSON payload size (bytes)',           1,'')
-        );
+        // Master enable + soft kill switch from setup (visible in const admin)
+        $this->const[] = array('USERACTIVITYTRACKER_MASTER_ENABLED', 'chaine', '1', 'Master switch to enable the User Activity Tracker module', 1, '');
+        $this->const[] = array('USERACTIVITYTRACKER_ENABLE_TRACKING', 'chaine', '1', 'Soft switch to enable/disable logging without disabling module', 1, '');
+        $this->const[] = array('USERACTIVITYTRACKER_PAYLOAD_MAX_BYTES', 'chaine', '65536', 'Max JSON payload size written into the log table', 1, '');
 
         // rights
         $this->rights = array();
