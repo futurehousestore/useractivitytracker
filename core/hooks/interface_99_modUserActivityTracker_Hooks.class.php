@@ -2,8 +2,10 @@
 /**
  * Hooks — User Activity Tracker (login/logout/page/action)
  * Path: custom/useractivitytracker/core/hooks/interface_99_modUserActivityTracker_Hooks.class.php
- * Version: 2.8.1-fix1
+ * Version: 2.8.1 — Canonical table names via UserActivityTables helper
  */
+
+require_once DOL_DOCUMENT_ROOT.'/custom/useractivitytracker/class/UserActivityTables.php';
 
 class ActionsUserActivityTracker
 {
@@ -122,50 +124,27 @@ class ActionsUserActivityTracker
 
     private function ensureTable()
     {
-        // Correct, module-scoped table
-        $tNew = $this->db->prefix().'useractivitytracker_log';
-        // Old, mistaken table name used in earlier draft
-        $tOld = $this->db->prefix().'alt_user_activity';
-
-        // Exists already?
-        $resNew = $this->db->query("SHOW TABLES LIKE '".$this->db->escape($tNew)."'");
-        if ($resNew && $this->db->num_rows($resNew) > 0) return;
-
-        // If old table exists, migrate by renaming
-        $resOld = $this->db->query("SHOW TABLES LIKE '".$this->db->escape($tOld)."'");
-        if ($resOld && $this->db->num_rows($resOld) > 0) {
-            $this->db->query("RENAME TABLE ".$tOld." TO ".$tNew);
-            return;
-        }
-
-        // Fresh create
-        $sql = "CREATE TABLE ".$tNew." (
-            rowid INT(11) NOT NULL AUTO_INCREMENT,
-            tms TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            datestamp DATETIME NULL,
-            entity INT(11) NOT NULL DEFAULT 1,
-            action VARCHAR(128) NOT NULL,
-            element_type VARCHAR(64) NULL,
-            object_id INT(11) NULL,
-            ref VARCHAR(128) NULL,
-            userid INT(11) NULL,
+        // Use canonical table name via helper
+        $table = UserActivityTables::log($this->db);
+        
+        // Check if table exists
+        if ($this->db->DDLDescTable($table) >= 0) return;
+        
+        // Create fresh table
+        $sql = "CREATE TABLE ".$table." (
+            rowid BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            datestamp DATETIME NOT NULL,
+            fk_user INTEGER NULL,
             username VARCHAR(128) NULL,
+            uri TEXT NULL,
             ip VARCHAR(64) NULL,
-            payload LONGTEXT NULL,
-            severity VARCHAR(16) NULL,
-            kpi1 DECIMAL(24,6) NULL,
-            kpi2 DECIMAL(24,6) NULL,
-            note VARCHAR(255) NULL,
-            PRIMARY KEY (rowid),
-            INDEX idx_action (action),
-            INDEX idx_element (element_type, object_id),
-            INDEX idx_user (userid),
-            INDEX idx_datestamp (datestamp),
-            INDEX idx_entity (entity),
-            INDEX idx_entity_datestamp (entity, datestamp),
-            INDEX idx_entity_user_datestamp (entity, userid, datestamp)
+            ua VARCHAR(255) NULL,
+            entity INTEGER NOT NULL DEFAULT 1,
+            KEY idx_entity_date (entity, datestamp),
+            KEY idx_user (username)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
-        $this->db->query($sql); // ignore if fails on charset (rare)
+        
+        @$this->db->query($sql); // Suppress errors - table creation is best-effort
     }
 
     private function logActivity($action, $payload = array())
@@ -179,47 +158,25 @@ class ActionsUserActivityTracker
         if (isset($this->dedupCache[$key]) && ($now - $this->dedupCache[$key]) < $this->dedupWindow) return;
         $this->dedupCache[$key] = $now;
 
-        // Build payload JSON (bounded)
-        $full = $payload + array(
-            'ts'            => $now,
-            'request_uri'   => $_SERVER['REQUEST_URI'] ?? null,
-            'request_method'=> $_SERVER['REQUEST_METHOD'] ?? 'GET',
-            'session_id'    => session_id()
-        );
-        $json = json_encode($full, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
-        $max  = function_exists('getDolGlobalInt') ? max(1024, (int)getDolGlobalInt('USERACTIVITYTRACKER_PAYLOAD_MAX_BYTES', 65536)) : 65536;
-        if (strlen((string)$json) > $max) $json = substr($json, 0, $max-3).'...';
-
-        $severity = 'info';
-        $U = strtoupper($action);
-        if (strpos($U,'DELETE')!==false || strpos($U,'CANCEL')!==false) $severity = 'warning';
-        elseif (strpos($U,'ERROR')!==false || strpos($U,'FAIL')!==false) $severity = 'error';
-        elseif (strpos($U,'LOGIN')!==false || strpos($U,'LOGOUT')!==false) $severity = 'notice';
-
         $this->ensureTable();
 
-        $t        = $this->db->prefix().'useractivitytracker_log';
+        $table    = UserActivityTables::log($this->db);
         $entity   = (int) ($conf->entity ?? 1);
-        $element  = $payload['element'] ?? null;
-        $objid    = $payload['object_id'] ?? null;
-        $ref      = $payload['ref'] ?? null;
         $userid   = !empty($user->id) ? (int)$user->id : null;
         $username = !empty($user->login) ? $user->login : ($payload['login'] ?? null);
+        $uri      = $_SERVER['REQUEST_URI'] ?? null;
         $ip       = $this->getClientIP();
+        $ua       = $_SERVER['HTTP_USER_AGENT'] ?? null;
 
-        $sql  = "INSERT INTO ".$t." (datestamp, entity, action, element_type, object_id, ref, userid, username, ip, payload, severity, kpi1, kpi2, note) VALUES (";
+        $sql  = "INSERT INTO ".$table." (datestamp, fk_user, username, uri, ip, ua, entity) VALUES (";
         $sql .=       $this->db->idate($now).", ";
-        $sql .=       $entity.", ";
-        $sql .=      "'".$this->db->escape($action)."', ";
-        $sql .=       ($element ? "'".$this->db->escape($element)."'" : "NULL").", ";
-        $sql .=       (is_null($objid) ? "NULL" : (int)$objid).", ";
-        $sql .=       ($ref ? "'".$this->db->escape($ref)."'" : "NULL").", ";
         $sql .=       (is_null($userid) ? "NULL" : (int)$userid).", ";
         $sql .=       ($username ? "'".$this->db->escape($username)."'" : "NULL").", ";
+        $sql .=       ($uri ? "'".$this->db->escape($uri)."'" : "NULL").", ";
         $sql .=       ($ip ? "'".$this->db->escape($ip)."'" : "NULL").", ";
-        $sql .=       ($json ? "'".$this->db->escape($json)."'" : "NULL").", ";
-        $sql .=      "'".$this->db->escape($severity)."', ";
-        $sql .=       "NULL, NULL, NULL)";
+        $sql .=       ($ua ? "'".$this->db->escape($ua)."'" : "NULL").", ";
+        $sql .=       $entity.")";
+        
         $this->db->query($sql);
     }
 }

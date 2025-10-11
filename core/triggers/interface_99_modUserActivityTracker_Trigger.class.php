@@ -2,12 +2,14 @@
 /**
  * Universal trigger — User Activity Tracker
  * Path: custom/useractivitytracker/core/triggers/interface_99_modUserActivityTracker_Trigger.class.php
- * Version: 2.8.0 — Unified config checks, robust error handling, event deduplication
+ * Version: 2.8.1 — Canonical table names, auto-migration from legacy tables
  */
 
 if (!class_exists('DolibarrTriggers')) {
     require_once DOL_DOCUMENT_ROOT . '/core/triggers/dolibarrtriggers.class.php';
 }
+
+require_once DOL_DOCUMENT_ROOT.'/custom/useractivitytracker/class/UserActivityTables.php';
 
 class InterfaceUserActivityTrackerTrigger extends DolibarrTriggers
 {
@@ -15,8 +17,8 @@ class InterfaceUserActivityTrackerTrigger extends DolibarrTriggers
     public $db;
 
     public $family      = 'user';
-    public $description = 'Logs Dolibarr triggers into alt_user_activity';
-    public $version     = '2.8.0';
+    public $description = 'Logs Dolibarr triggers into useractivitytracker_activity';
+    public $version     = '2.8.1';
     public $name        = 'InterfaceUserActivityTrackerTrigger';
     public $picto       = 'useractivitytracker@useractivitytracker';
 
@@ -69,6 +71,8 @@ class InterfaceUserActivityTrackerTrigger extends DolibarrTriggers
         // Ensure table exists with robust error handling
         try {
             $this->ensureTable();
+            // One-time migration from legacy names
+            self::migrateLegacy($this->db);
         } catch (Exception $e) {
             error_log("User Activity Tracker Trigger: table creation failed — " . $e->getMessage());
             return 0; // Graceful degradation: skip logging if table can't be created
@@ -108,19 +112,22 @@ class InterfaceUserActivityTrackerTrigger extends DolibarrTriggers
 
         // INSERT with try/catch for robust error handling
         try {
-            $sql  = "INSERT INTO ".$this->db->prefix()."alt_user_activity";
-            $sql .= " (datestamp, entity, action, element_type, object_id, ref, userid, username, ip, payload, severity, note) VALUES (";
+            $table = UserActivityTables::activity($this->db);
+            $sql  = "INSERT INTO ".$table;
+            $sql .= " (datestamp, fk_user, username, action, element_type, element_id, ref, severity, ip, ua, uri, kpi1, kpi2, note, entity) VALUES (";
             $sql .=       $this->db->idate($now).", ";
-            $sql .=       (int)$conf->entity.", ";
+            $sql .=       ($userid > 0 ? (int)$userid : "NULL").", ";
+            $sql .=      "'".$this->db->escape($user->login)."', ";
             $sql .=      "'".$this->db->escape($action)."', ";
             $sql .=       ($element ? "'".$this->db->escape($element)."'" : "NULL").", ";
             $sql .=       ($objid > 0 ? (int)$objid : "NULL").", ";
             $sql .=       ($ref ? "'".$this->db->escape($ref)."'" : "NULL").", ";
-            $sql .=       ($userid > 0 ? (int)$userid : "NULL").", ";
-            $sql .=      "'".$this->db->escape($user->login)."', ";
+            $sql .=      "'".$this->db->escape($severity)."', ";
             $sql .=       ($ip ? "'".$this->db->escape($ip)."'" : "NULL").", ";
-            $sql .=       ($json ? "'".$this->db->escape($json)."'" : "NULL").", ";
-            $sql .=      "'".$this->db->escape($severity)."', NULL)";
+            $sql .=       ($json ? "'".$this->db->escape(substr($json, 0, 255))."'" : "NULL").", ";
+            $sql .=       "'".$this->db->escape($_SERVER['REQUEST_URI'] ?? '')."', ";
+            $sql .=       "NULL, NULL, NULL, ";
+            $sql .=       (int)$conf->entity.")";
             
             if (!$this->db->query($sql)) {
                 $this->errors[] = 'Insert error: '.$this->db->lasterror();
@@ -172,60 +179,109 @@ class InterfaceUserActivityTrackerTrigger extends DolibarrTriggers
     }
 
     /**
-     * Create table if missing (idempotent with robust error handling)
-     * v2.8.0: Added try/catch for graceful degradation
-     *
-     * @throws Exception if table check fails critically
+     * One-time migration from legacy table names
+     * Automatically migrates data from alt_user_activity to useractivitytracker_activity
+     * Only copies intersecting columns to prevent errors from schema differences
+     * 
+     * @param DoliDB $db
+     */
+    private static function migrateLegacy($db)
+    {
+        static $migrated = false;
+        if ($migrated) return; // Run only once per request
+        $migrated = true;
+
+        $new = UserActivityTables::activity($db);
+        $old = $db->prefix().'alt_user_activity';
+        
+        // Create new table if missing
+        self::ensureActivityTable($db, $new);
+        
+        // Check if legacy table exists
+        $res = $db->DDLDescTable($old);
+        if ($res <= 0) return; // Old table doesn't exist, nothing to migrate
+        
+        // Build column intersection to safely migrate
+        $colsOld = array_map('strtolower', array_keys($db->database_specific_columns ?? array()));
+        $db->DDLDescTable($new);
+        $colsNew = array_map('strtolower', array_keys($db->database_specific_columns ?? array()));
+        $cols = array_values(array_intersect($colsOld, $colsNew));
+        
+        if (empty($cols)) return; // No common columns
+        
+        // Map legacy column names to new canonical names
+        $columnMap = array(
+            'object_id' => 'element_id',
+            'userid' => 'fk_user',
+            'payload' => 'ua'
+        );
+        
+        // Build SELECT and INSERT column lists
+        $selectCols = array();
+        $insertCols = array();
+        foreach ($cols as $col) {
+            if ($col === 'rowid' || $col === 'tms') continue; // Skip auto-generated fields
+            
+            $selectCols[] = '`'.$col.'`';
+            // Use mapped column name if exists, otherwise use same name
+            $insertCols[] = '`'.(isset($columnMap[$col]) ? $columnMap[$col] : $col).'`';
+        }
+        
+        if (empty($selectCols)) return;
+        
+        $selectList = implode(',', $selectCols);
+        $insertList = implode(',', $insertCols);
+        
+        // Migrate data with INSERT IGNORE to avoid conflicts
+        $sql = "INSERT IGNORE INTO $new ($insertList) SELECT $selectList FROM $old";
+        @$db->query($sql); // Suppress errors - migration is best-effort
+    }
+
+    /**
+     * Create activity table if missing (idempotent)
+     * 
+     * @param DoliDB $db
+     * @param string $table Full table name with prefix
+     */
+    private static function ensureActivityTable($db, $table)
+    {
+        if ($db->DDLDescTable($table) >= 0) return; // Table exists
+        
+        $sql = "CREATE TABLE ".$table." (
+            rowid BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            datestamp DATETIME NOT NULL,
+            fk_user INTEGER NULL,
+            username VARCHAR(128) NULL,
+            action VARCHAR(64) NOT NULL,
+            element_type VARCHAR(64) NULL,
+            element_id INTEGER NULL,
+            ref VARCHAR(255) NULL,
+            severity ENUM('info','notice','warning','error') NOT NULL DEFAULT 'info',
+            ip VARCHAR(64) NULL,
+            ua VARCHAR(255) NULL,
+            uri TEXT NULL,
+            kpi1 BIGINT NULL,
+            kpi2 BIGINT NULL,
+            note TEXT NULL,
+            entity INTEGER NOT NULL DEFAULT 1,
+            extraparams TEXT NULL,
+            KEY idx_entity_date (entity, datestamp),
+            KEY idx_action (action),
+            KEY idx_user (username),
+            KEY idx_element (element_type, element_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+        
+        $db->query($sql);
+    }
+
+    /**
+     * Legacy table creation for backward compatibility
+     * @deprecated Use ensureActivityTable instead
      */
     private function ensureTable()
     {
-        try {
-            $t = $this->db->prefix().'alt_user_activity';
-            
-            // Check if table exists
-            $res = $this->db->query("SHOW TABLES LIKE '".$this->db->escape($t)."'");
-            if (!$res) {
-                throw new Exception("Failed to check table existence: " . $this->db->lasterror());
-            }
-            
-            if ($this->db->num_rows($res) > 0) {
-                return; // Table exists, nothing to do
-            }
-
-            // Create table with proper schema
-            $sql = "CREATE TABLE ".$t." (
-                rowid INT(11) NOT NULL AUTO_INCREMENT,
-                tms TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                datestamp DATETIME NULL,
-                entity INT(11) NOT NULL DEFAULT 1,
-                action VARCHAR(128) NOT NULL,
-                element_type VARCHAR(64) NULL,
-                object_id INT(11) NULL,
-                ref VARCHAR(128) NULL,
-                userid INT(11) NULL,
-                username VARCHAR(128) NULL,
-                ip VARCHAR(64) NULL,
-                payload LONGTEXT NULL,
-                severity VARCHAR(16) NULL,
-                kpi1 DECIMAL(24,6) NULL,
-                kpi2 DECIMAL(24,6) NULL,
-                note VARCHAR(255) NULL,
-                PRIMARY KEY (rowid),
-                INDEX idx_action (action),
-                INDEX idx_element (element_type, object_id),
-                INDEX idx_user (userid),
-                INDEX idx_datestamp (datestamp),
-                INDEX idx_entity (entity)
-            ) ENGINE=innodb DEFAULT CHARSET=utf8;";
-            
-            $res = $this->db->query($sql);
-            if (!$res) {
-                throw new Exception("Failed to create table: " . $this->db->lasterror());
-            }
-        } catch (Exception $e) {
-            // Re-throw for caller to handle
-            error_log("User Activity Tracker Trigger: ensureTable error — " . $e->getMessage());
-            throw $e;
-        }
+        // Delegate to new method
+        $table = UserActivityTables::activity($this->db);
+        self::ensureActivityTable($this->db, $table);
     }
 }
