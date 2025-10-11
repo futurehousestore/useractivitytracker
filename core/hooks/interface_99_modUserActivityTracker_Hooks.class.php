@@ -2,7 +2,7 @@
 /**
  * Hooks class — User Activity Tracker (enhanced login/logout/page/action logging)
  * Path: custom/useractivitytracker/core/hooks/interface_99_modUserActivityTracker_Hooks.class.php
- * Version: 2.7.0 — UAT_MASTER_ENABLED gate, entity scoping, parameterized queries
+ * Version: 2.8.0 — Unified config checks, robust error handling, event deduplication
  */
 
 require_once DOL_DOCUMENT_ROOT . '/core/class/hookmanager.class.php';
@@ -17,6 +17,12 @@ class ActionsUserActivityTracker
 
     /** @var array */
     public $errors = array();
+
+    /** @var array Deduplication cache (action => last_log_time) */
+    private $dedupCache = array();
+
+    /** @var int Deduplication window in seconds */
+    private $dedupWindow = 2;
 
     public function __construct($db)
     {
@@ -134,7 +140,8 @@ class ActionsUserActivityTracker
     }
 
     /**
-     * Guard: module + global toggle (+ optionally a logged-in user)
+     * Unified configuration check — used by all hook methods
+     * Standardized coordination between master switch and tracking toggle
      *
      * @param bool $requireUser true to require $user->id
      * @return bool
@@ -143,21 +150,29 @@ class ActionsUserActivityTracker
     {
         global $conf, $user;
 
-        // MASTER switch (v2.7 - central gate)
+        // MASTER switch (v2.7+ - central gate)
+        // When OFF, ALL tracking is disabled regardless of other settings
         if (function_exists('getDolGlobalInt') && !getDolGlobalInt('USERACTIVITYTRACKER_MASTER_ENABLED', 1)) {
             return false;
         }
 
-        if (empty($conf->useractivitytracker->enabled)) return false;
+        // Module must be enabled
+        if (empty($conf->useractivitytracker->enabled)) {
+            return false;
+        }
 
+        // Tracking toggle (can be disabled even if module is enabled)
+        // This provides granular control: module can be active but not tracking
         if (function_exists('getDolGlobalInt') && !getDolGlobalInt('USERACTIVITYTRACKER_ENABLE_TRACKING', 1)) {
             return false;
         }
 
+        // User must be logged in (for user-specific hooks)
         if ($requireUser && (empty($user) || empty($user->id))) {
             return false;
         }
 
+        // Per-user skip list (privacy/performance optimization)
         if (function_exists('getDolGlobalString') && !empty($user->id) && getDolGlobalString('USERACTIVITYTRACKER_SKIP_USER_' . (int)$user->id)) {
             return false;
         }
@@ -167,6 +182,7 @@ class ActionsUserActivityTracker
 
     /**
      * Core logger — writes to llx_alt_user_activity
+     * v2.8.0 improvements: event deduplication, robust error handling
      *
      * @param string $action
      * @param array  $payload
@@ -176,14 +192,29 @@ class ActionsUserActivityTracker
     {
         global $user, $conf;
 
-        // MASTER switch (v2.7 - central gate, returns early if disabled)
+        // MASTER switch (v2.7+ - central gate, returns early if disabled)
         if (function_exists('getDolGlobalInt') && !getDolGlobalInt('USERACTIVITYTRACKER_MASTER_ENABLED', 1)) return;
         
-        // Double-check toggles (cheap)
+        // Double-check toggles (cheap safety check)
         if (function_exists('getDolGlobalInt') && !getDolGlobalInt('USERACTIVITYTRACKER_ENABLE_TRACKING', 1)) return;
         if (function_exists('getDolGlobalString') && !empty($user->id) && getDolGlobalString('USERACTIVITYTRACKER_SKIP_USER_' . (int)$user->id)) return;
 
+        // Event deduplication: prevent logging same action multiple times within window
+        // Creates cache key from action + userid to prevent race conditions
+        $userid = !empty($user->id) ? (int)$user->id : 0;
+        $dedupKey = $action . '_' . $userid;
         $now = function_exists('dol_now') ? dol_now() : time();
+        
+        if (isset($this->dedupCache[$dedupKey])) {
+            $lastLog = $this->dedupCache[$dedupKey];
+            if (($now - $lastLog) < $this->dedupWindow) {
+                // Skip: same event logged too recently (likely duplicate from trigger/hook)
+                return;
+            }
+        }
+        
+        // Update deduplication cache
+        $this->dedupCache[$dedupKey] = $now;
 
         // Build and cap payload
         $full = array_merge($payload, array(
@@ -207,39 +238,50 @@ class ActionsUserActivityTracker
             }
         }
 
-        // Severity
+        // Severity heuristics
         $severity = 'info';
         $u = strtoupper((string)$action);
         if (strpos($u, 'FAILED') !== false || strpos($u, 'ERROR') !== false) $severity = 'error';
         elseif (strpos($u, 'LOGIN') !== false || strpos($u, 'LOGOUT') !== false) $severity = 'notice';
 
         // Prepare columns
-        $userid   = !empty($user->id) ? (int)$user->id : null;
         $username = !empty($user->login) ? $user->login : ($payload['login'] ?? null);
         $ip       = $this->getClientIP();
 
-        // Ensure table exists (no-op if present)
-        $this->createTableIfMissing();
+        // Ensure table exists before attempting insert
+        try {
+            $this->createTableIfMissing();
+        } catch (Exception $e) {
+            error_log("User Activity Tracker Hook: table creation failed — " . $e->getMessage());
+            return; // Graceful degradation: skip logging if table can't be created
+        }
 
-        // Build INSERT (use idate *without* quotes)
-        $sql  = "INSERT INTO ".$this->db->prefix()."alt_user_activity";
-        $sql .= " (datestamp, entity, action, element_type, object_id, ref, userid, username, ip, payload, severity, note) VALUES (";
-        $sql .=       $this->db->idate($now).", ";
-        $sql .=       (int)$conf->entity.", ";
-        $sql .=      "'".$this->db->escape($action)."', ";
-        $sql .=      "'hook_event', ";
-        $sql .=       "NULL, ";
-        $sql .=       "NULL, ";
-        $sql .=       ($userid !== null ? (int)$userid : "NULL").", ";
-        $sql .=       ($username !== null ? "'".$this->db->escape($username)."'" : "NULL").", ";
-        $sql .=       ($ip ? "'".$this->db->escape($ip)."'" : "NULL").", ";
-        $sql .=       ($json ? "'".$this->db->escape($json)."'" : "NULL").", ";
-        $sql .=      "'".$this->db->escape($severity)."', ";
-        $sql .=       "NULL)";
+        // Build INSERT with proper parameterization (using db->escape)
+        try {
+            $sql  = "INSERT INTO ".$this->db->prefix()."alt_user_activity";
+            $sql .= " (datestamp, entity, action, element_type, object_id, ref, userid, username, ip, payload, severity, note) VALUES (";
+            $sql .=       $this->db->idate($now).", ";
+            $sql .=       (int)$conf->entity.", ";
+            $sql .=      "'".$this->db->escape($action)."', ";
+            $sql .=      "'hook_event', ";
+            $sql .=       "NULL, ";
+            $sql .=       "NULL, ";
+            $sql .=       ($userid !== null && $userid > 0 ? (int)$userid : "NULL").", ";
+            $sql .=       ($username !== null ? "'".$this->db->escape($username)."'" : "NULL").", ";
+            $sql .=       ($ip ? "'".$this->db->escape($ip)."'" : "NULL").", ";
+            $sql .=       ($json ? "'".$this->db->escape($json)."'" : "NULL").", ";
+            $sql .=      "'".$this->db->escape($severity)."', ";
+            $sql .=       "NULL)";
 
-        $res = $this->db->query($sql);
-        if (!$res) {
-            error_log("User Activity Tracker Hook: insert failed — ".$this->db->lasterror());
+            $res = $this->db->query($sql);
+            if (!$res) {
+                // Log error but don't throw exception (graceful degradation)
+                error_log("User Activity Tracker Hook: insert failed — ".$this->db->lasterror());
+            }
+        } catch (Exception $e) {
+            // Catch any database exceptions and log them
+            error_log("User Activity Tracker Hook: database exception — " . $e->getMessage());
+            // Graceful degradation: continue execution even if logging fails
         }
     }
 
@@ -258,38 +300,60 @@ class ActionsUserActivityTracker
     }
 
     /**
-     * Create table if missing (idempotent)
+     * Create table if missing (idempotent with robust error handling)
+     * v2.8.0: Added try/catch for graceful degradation
+     *
+     * @throws Exception if table check fails critically
      */
     private function createTableIfMissing()
     {
-        $table = $this->db->prefix().'alt_user_activity';
-        $chk = $this->db->query("SHOW TABLES LIKE '".$this->db->escape($table)."'");
-        if ($chk && $this->db->num_rows($chk) > 0) return;
+        try {
+            $table = $this->db->prefix().'alt_user_activity';
+            
+            // Check if table exists
+            $chk = $this->db->query("SHOW TABLES LIKE '".$this->db->escape($table)."'");
+            if (!$chk) {
+                throw new Exception("Failed to check table existence: " . $this->db->lasterror());
+            }
+            
+            if ($this->db->num_rows($chk) > 0) {
+                return; // Table exists, nothing to do
+            }
 
-        $sql = "CREATE TABLE ".$table." (
-            rowid INT(11) NOT NULL AUTO_INCREMENT,
-            tms TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            datestamp DATETIME NULL,
-            entity INT(11) NOT NULL DEFAULT 1,
-            action VARCHAR(128) NOT NULL,
-            element_type VARCHAR(64) NULL,
-            object_id INT(11) NULL,
-            ref VARCHAR(128) NULL,
-            userid INT(11) NULL,
-            username VARCHAR(128) NULL,
-            ip VARCHAR(64) NULL,
-            payload LONGTEXT NULL,
-            severity VARCHAR(16) NULL,
-            kpi1 DECIMAL(24,6) NULL,
-            kpi2 DECIMAL(24,6) NULL,
-            note VARCHAR(255) NULL,
-            PRIMARY KEY (rowid),
-            INDEX idx_action (action),
-            INDEX idx_element (element_type, object_id),
-            INDEX idx_user (userid),
-            INDEX idx_datestamp (datestamp),
-            INDEX idx_entity (entity)
-        ) ENGINE=innodb DEFAULT CHARSET=utf8;";
-        $this->db->query($sql);
+            // Create table with proper schema
+            $sql = "CREATE TABLE ".$table." (
+                rowid INT(11) NOT NULL AUTO_INCREMENT,
+                tms TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                datestamp DATETIME NULL,
+                entity INT(11) NOT NULL DEFAULT 1,
+                action VARCHAR(128) NOT NULL,
+                element_type VARCHAR(64) NULL,
+                object_id INT(11) NULL,
+                ref VARCHAR(128) NULL,
+                userid INT(11) NULL,
+                username VARCHAR(128) NULL,
+                ip VARCHAR(64) NULL,
+                payload LONGTEXT NULL,
+                severity VARCHAR(16) NULL,
+                kpi1 DECIMAL(24,6) NULL,
+                kpi2 DECIMAL(24,6) NULL,
+                note VARCHAR(255) NULL,
+                PRIMARY KEY (rowid),
+                INDEX idx_action (action),
+                INDEX idx_element (element_type, object_id),
+                INDEX idx_user (userid),
+                INDEX idx_datestamp (datestamp),
+                INDEX idx_entity (entity)
+            ) ENGINE=innodb DEFAULT CHARSET=utf8;";
+            
+            $res = $this->db->query($sql);
+            if (!$res) {
+                throw new Exception("Failed to create table: " . $this->db->lasterror());
+            }
+        } catch (Exception $e) {
+            // Re-throw for caller to handle
+            error_log("User Activity Tracker Hook: createTableIfMissing error — " . $e->getMessage());
+            throw $e;
+        }
     }
 }

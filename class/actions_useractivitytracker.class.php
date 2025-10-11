@@ -2,7 +2,7 @@
 /**
  * Hooks — User Activity Tracker (login/logout/page/action + time-on-page)
  * Path: custom/useractivitytracker/class/actions_useractivitytracker.class.php
- * Version: 2.7.0 — UAT_MASTER_ENABLED gate, entity scoping, parameterized queries
+ * Version: 2.8.0 — UAT_MASTER_ENABLED gate, entity scoping, parameterized queries
  */
 
 class ActionsUseractivitytracker

@@ -2,7 +2,7 @@
 /**
  * Constants for User Activity Tracker
  * Path: custom/useractivitytracker/class/constants.php
- * Version: 2.7.0 — centralized action and severity constants
+ * Version: 2.8.0 — centralized action and severity constants
  */
 
 // Action type constants

@@ -2,7 +2,7 @@
 /**
  * Export endpoint
  * Path: custom/useractivitytracker/scripts/export.php
- * Version: 2.7.0 — entity scoping, JSON/NDJSON support, strict validation
+ * Version: 2.8.0 — entity scoping, JSON/NDJSON support, strict validation
  */
 
 /* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */

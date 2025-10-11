@@ -2,7 +2,7 @@
 /**
  * DAO for alt_user_activity
  * Path: custom/useractivitytracker/class/useractivity.class.php
- * Version: 2.7.0 — entity scoping, retention cleanup, analytics methods
+ * Version: 2.8.0 — entity scoping, retention cleanup, analytics methods
  */
 
 require_once DOL_DOCUMENT_ROOT . '/core/class/commonobject.class.php';

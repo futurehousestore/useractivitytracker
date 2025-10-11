@@ -2,7 +2,7 @@
 /**
  * Export Data page
  * Path: custom/useractivitytracker/admin/useractivitytracker_export.php
- * Version: 2.7.0 — entity scoping, strict validation, severity badges
+ * Version: 2.8.0 — entity scoping, strict validation, severity badges
  */
 
 /* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */
