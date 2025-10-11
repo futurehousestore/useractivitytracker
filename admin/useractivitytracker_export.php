@@ -189,7 +189,7 @@ if (!empty($severity_filter)) {
 }
 
 $sql = "SELECT datestamp, action, element_type, username, ip, severity 
-        FROM ".$db->prefix()."alt_user_activity".$cond." 
+        FROM ".$db->prefix()."useractivitytracker_activity".$cond." 
         ORDER BY datestamp DESC 
         LIMIT 20";
 

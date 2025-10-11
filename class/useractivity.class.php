@@ -1,17 +1,18 @@
 <?php
 /**
- * DAO for alt_user_activity
+ * DAO for useractivitytracker_activity
  * Path: custom/useractivitytracker/class/useractivity.class.php
- * Version: 2.8.0 — entity scoping, retention cleanup, analytics methods
+ * Version: 2.8.1 — Canonical table names
  */
 
 require_once DOL_DOCUMENT_ROOT . '/core/class/commonobject.class.php';
+require_once DOL_DOCUMENT_ROOT . '/custom/useractivitytracker/class/UserActivityTables.php';
 
 class UserActivity extends CommonObject
 {
     /** Object identifiers */
-    public $element       = 'alt_user_activity';
-    public $table_element = 'alt_user_activity';
+    public $element       = 'useractivitytracker_activity';
+    public $table_element = 'useractivitytracker_activity';
 
     /** Multicompany awareness */
     public $ismultientity = 1; // table has an entity column

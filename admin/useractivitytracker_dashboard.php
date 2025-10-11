@@ -2,7 +2,7 @@
 /**
  * Dashboard page
  * Path: custom/useractivitytracker/admin/useractivitytracker_dashboard.php
- * Version: 2.8.0 — parameterized queries, CSRF protection, server-side pagination, entity scoping
+ * Version: 2.8.1 — Canonical table names via UserActivityTables helper
  */
 
 /* ---- Locate htdocs/main.inc.php (top-level, not inside a function!) ---- */
@@ -27,6 +27,8 @@ if (!$main) {
     exit;
 }
 require $main;
+
+require_once DOL_DOCUMENT_ROOT.'/custom/useractivitytracker/class/UserActivityTables.php';
 
 /* ---- Rights ---- */
 if (empty($user->rights->useractivitytracker->read)) accessforbidden();
@@ -90,26 +92,26 @@ if (GETPOST('ajax', 'int') == 1) {
 
     // Totals
     $totalCount = 0;
-    $sql = "SELECT COUNT(*) as total FROM {$prefix}alt_user_activity {$cond}";
+    $sql = "SELECT COUNT(*) as total FROM {$prefix}useractivitytracker_activity {$cond}";
     $res = $db->query($sql);
     if ($res && ($obj = $db->fetch_object($res))) { $totalCount = (int)$obj->total; $db->free($res); }
 
     // By action
     $byType = array();
-    $sql = "SELECT action, COUNT(*) as n FROM {$prefix}alt_user_activity {$cond} GROUP BY action ORDER BY n DESC LIMIT 10";
+    $sql = "SELECT action, COUNT(*) as n FROM {$prefix}useractivitytracker_activity {$cond} GROUP BY action ORDER BY n DESC LIMIT 10";
     $res = $db->query($sql);
     if ($res) { while ($o = $db->fetch_object($res)) $byType[] = $o; $db->free($res); }
 
     // By user
     $byUser = array();
-    $sql = "SELECT username, COUNT(*) as n FROM {$prefix}alt_user_activity {$cond} GROUP BY username ORDER BY n DESC LIMIT 10";
+    $sql = "SELECT username, COUNT(*) as n FROM {$prefix}useractivitytracker_activity {$cond} GROUP BY username ORDER BY n DESC LIMIT 10";
     $res = $db->query($sql);
     if ($res) { while ($o = $db->fetch_object($res)) $byUser[] = $o; $db->free($res); }
 
     // Recent activities with pagination
     $recentActivities = array();
     $sql = "SELECT rowid, datestamp, action, element_type, username, ref, severity 
-            FROM {$prefix}alt_user_activity {$cond}
+            FROM {$prefix}useractivitytracker_activity {$cond}
             ORDER BY datestamp DESC LIMIT " . (int)$limit_results . " OFFSET " . (int)$offset;
     $res = $db->query($sql);
     if ($res) { while ($o = $db->fetch_object($res)) $recentActivities[] = $o; $db->free($res); }
@@ -117,7 +119,7 @@ if (GETPOST('ajax', 'int') == 1) {
     // Top pages by time (PAGE_TIME)
     $topPages = array();
     $sql = "SELECT ref AS uri, COUNT(*) AS visits, SUM(kpi1) AS total_sec, ROUND(AVG(kpi1),1) AS avg_sec
-            FROM {$prefix}alt_user_activity {$cond} AND action='PAGE_TIME' AND ref IS NOT NULL
+            FROM {$prefix}useractivitytracker_activity {$cond} AND action='PAGE_TIME' AND ref IS NOT NULL
             GROUP BY ref ORDER BY total_sec DESC LIMIT 10";
     $res = $db->query($sql);
     if ($res) { while ($o = $db->fetch_object($res)) $topPages[] = $o; $db->free($res); }
@@ -125,7 +127,7 @@ if (GETPOST('ajax', 'int') == 1) {
     // Time by day (timeline of seconds)
     $timeSeries = array();
     $sql = "SELECT DATE(datestamp) AS d, SUM(kpi1) AS sec
-            FROM {$prefix}alt_user_activity {$cond} AND action='PAGE_TIME'
+            FROM {$prefix}useractivitytracker_activity {$cond} AND action='PAGE_TIME'
             GROUP BY DATE(datestamp) ORDER BY d ASC";
     $res = $db->query($sql);
     if ($res) { while ($o = $db->fetch_object($res)) $timeSeries[] = $o; $db->free($res); }
@@ -133,7 +135,7 @@ if (GETPOST('ajax', 'int') == 1) {
     // Per-user dwell (aggregates)
     $userTime = array();
     $sql = "SELECT username, COUNT(*) AS visits, SUM(kpi1) AS total_sec, ROUND(AVG(kpi1),1) AS avg_sec
-            FROM {$prefix}alt_user_activity {$cond} AND action='PAGE_TIME'
+            FROM {$prefix}useractivitytracker_activity {$cond} AND action='PAGE_TIME'
             GROUP BY username ORDER BY total_sec DESC LIMIT 10";
     $res = $db->query($sql);
     if ($res) { while ($o = $db->fetch_object($res)) $userTime[] = $o; $db->free($res); }
@@ -190,58 +192,58 @@ $cond   = uat_build_where($db, $conf, $from, $to, $search_action, $search_user, 
 
 /* ---- Stats queries ---- */
 $byType = array();
-$sql = "SELECT action, COUNT(*) as n FROM {$prefix}alt_user_activity {$cond} GROUP BY action ORDER BY n DESC LIMIT 10";
+$sql = "SELECT action, COUNT(*) as n FROM {$prefix}useractivitytracker_activity {$cond} GROUP BY action ORDER BY n DESC LIMIT 10";
 $res = $db->query($sql);
 if ($res) { while ($o = $db->fetch_object($res)) $byType[] = $o; $db->free($res); }
 
 $byUser = array();
-$sql = "SELECT username, COUNT(*) as n FROM {$prefix}alt_user_activity {$cond} GROUP BY username ORDER BY n DESC LIMIT 10";
+$sql = "SELECT username, COUNT(*) as n FROM {$prefix}useractivitytracker_activity {$cond} GROUP BY username ORDER BY n DESC LIMIT 10";
 $res = $db->query($sql);
 if ($res) { while ($o = $db->fetch_object($res)) $byUser[] = $o; $db->free($res); }
 
 $byElement = array();
-$sql = "SELECT element_type, COUNT(*) as n FROM {$prefix}alt_user_activity {$cond} AND element_type IS NOT NULL GROUP BY element_type ORDER BY n DESC LIMIT 10";
+$sql = "SELECT element_type, COUNT(*) as n FROM {$prefix}useractivitytracker_activity {$cond} AND element_type IS NOT NULL GROUP BY element_type ORDER BY n DESC LIMIT 10";
 $res = $db->query($sql);
 if ($res) { while ($o = $db->fetch_object($res)) $byElement[] = $o; $db->free($res); }
 
 /* Time analytics */
 $topPages = array();
 $sql = "SELECT ref AS uri, COUNT(*) AS visits, SUM(kpi1) AS total_sec, ROUND(AVG(kpi1),1) AS avg_sec
-        FROM {$prefix}alt_user_activity {$cond} AND action='PAGE_TIME' AND ref IS NOT NULL
+        FROM {$prefix}useractivitytracker_activity {$cond} AND action='PAGE_TIME' AND ref IS NOT NULL
         GROUP BY ref ORDER BY total_sec DESC LIMIT 10";
 $res = $db->query($sql);
 if ($res) { while ($o = $db->fetch_object($res)) $topPages[] = $o; $db->free($res); }
 
 $userTime = array();
 $sql = "SELECT username, COUNT(*) AS visits, SUM(kpi1) AS total_sec, ROUND(AVG(kpi1),1) AS avg_sec
-        FROM {$prefix}alt_user_activity {$cond} AND action='PAGE_TIME'
+        FROM {$prefix}useractivitytracker_activity {$cond} AND action='PAGE_TIME'
         GROUP BY username ORDER BY total_sec DESC LIMIT 10";
 $res = $db->query($sql);
 if ($res) { while ($o = $db->fetch_object($res)) $userTime[] = $o; $db->free($res); }
 
 $timeSeries = array();
 $sql = "SELECT DATE(datestamp) AS d, SUM(kpi1) AS sec
-        FROM {$prefix}alt_user_activity {$cond} AND action='PAGE_TIME'
+        FROM {$prefix}useractivitytracker_activity {$cond} AND action='PAGE_TIME'
         GROUP BY DATE(datestamp) ORDER BY d ASC";
 $res = $db->query($sql);
 if ($res) { while ($o = $db->fetch_object($res)) $timeSeries[] = $o; $db->free($res); }
 
 /* Totals & recent */
 $totalCount = 0;
-$sql = "SELECT COUNT(*) as total FROM {$prefix}alt_user_activity {$cond}";
+$sql = "SELECT COUNT(*) as total FROM {$prefix}useractivitytracker_activity {$cond}";
 $res = $db->query($sql);
 if ($res && ($obj = $db->fetch_object($res))) { $totalCount = (int)$obj->total; $db->free($res); }
 
 $recentActivities = array();
 $sql = "SELECT rowid, datestamp, action, element_type, username, ref, severity 
-        FROM {$prefix}alt_user_activity {$cond} 
+        FROM {$prefix}useractivitytracker_activity {$cond} 
         ORDER BY datestamp DESC LIMIT ".(int)$limit_results;
 $res = $db->query($sql);
 if ($res) { while ($o = $db->fetch_object($res)) $recentActivities[] = $o; $db->free($res); }
 
 /* Opportunistic retention cleanup */
 $days = getDolGlobalInt('USERACTIVITYTRACKER_RETENTION_DAYS', 365);
-$db->query("DELETE FROM ".$db->prefix()."alt_user_activity 
+$db->query("DELETE FROM ".$db->prefix()."useractivitytracker_activity 
             WHERE datestamp < DATE_SUB(NOW(), INTERVAL ".((int)$days)." DAY) 
               AND entity=".(int)$conf->entity);
 
@@ -285,7 +287,7 @@ if ($totalCount == 0) {
 
     if (!$diagnostics['table_exists']) {
         print '<div class="alert alert-danger" style="padding:15px;margin:10px 0;background:#f8d7da;border:1px solid #f5c6cb;border-radius:4px;color:#721c24;">';
-        print '<strong>❌ Critical:</strong> Table <code>'.$db->prefix().'alt_user_activity</code> not found. Disable/enable the module to create it.';
+        print '<strong>❌ Critical:</strong> Table <code>'.$db->prefix().'useractivitytracker_activity</code> not found. Disable/enable the module to create it.';
         print '</div>';
     } else {
         print '<div class="alert alert-info" style="padding:15px;margin:10px 0;background:#d1ecf1;border:1px solid #bee5eb;border-radius:4px;color:#0c5460;">';

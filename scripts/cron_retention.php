@@ -90,7 +90,7 @@ print "Retention period: $retention_days days\n";
 print "Mode: " . ($dry_run ? "DRY RUN (no changes)" : "LIVE") . "\n";
 print "\n";
 
-$table = $db->prefix() . 'alt_user_activity';
+$table = $db->prefix() . 'useractivitytracker_activity';
 
 // Count records to delete
 $sql = "SELECT COUNT(*) as total FROM " . $table . " 

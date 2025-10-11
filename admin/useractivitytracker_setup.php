@@ -167,7 +167,7 @@ elseif ($action === 'analyze_anomalies') {
 
 /* Opportunistic retention cleanup */
 $days = getDolGlobalInt('USERACTIVITYTRACKER_RETENTION_DAYS', 365);
-$db->query("DELETE FROM ".$db->prefix()."alt_user_activity 
+$db->query("DELETE FROM ".$db->prefix()."useractivitytracker_activity 
             WHERE entity=".(int)$conf->entity." 
               AND datestamp < DATE_SUB(NOW(), INTERVAL ".((int)$days)." DAY)");
 
