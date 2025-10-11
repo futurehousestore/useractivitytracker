@@ -2,7 +2,7 @@
 /**
  * Module descriptor — User Activity Tracker
  * Path: custom/useractivitytracker/core/modules/modUserActivityTracker.class.php
- * Version: 2.8.1-fix1 — Deterministic logging via single hook; clean contexts; module-scoped table
+ * Version: 2.8.1 — Canonical table names, SQL migration path
  */
 
 require_once DOL_DOCUMENT_ROOT . '/core/modules/DolibarrModules.class.php';
@@ -22,7 +22,7 @@ class modUserActivityTracker extends DolibarrModules
         $this->name         = 'useractivitytracker';
 
         $this->description  = 'Track and analyse user activity across Dolibarr';
-        $this->version      = '2.8.1-fix1';
+        $this->version      = '2.8.1';
         $this->const_name   = 'MAIN_MODULE_' . strtoupper($this->rights_class);
         $this->special      = 0;
         $this->picto        = 'title.svg@useractivitytracker';
@@ -198,31 +198,15 @@ class modUserActivityTracker extends DolibarrModules
     }
     
     /**
-     * Migration logic for v2.7 - adds new indexes idempotently
+     * Migration logic for v2.8.1 - migrates from legacy alt_user_activity to canonical names
+     * Note: The trigger handles actual data migration automatically
      */
     private function runMigration()
     {
-        $table = $this->db->prefix() . 'alt_user_activity';
-        
-        // Check if table exists first
-        $chk = $this->db->query("SHOW TABLES LIKE '" . $this->db->escape($table) . "'");
-        if (!$chk || $this->db->num_rows($chk) == 0) {
-            // Table doesn't exist yet, will be created by SQL file
-            return;
-        }
-        
-        // Add new indexes idempotently (MySQL silently ignores if exists via ALTER IGNORE)
-        $indexes = array(
-            "ALTER TABLE " . $table . " ADD INDEX IF NOT EXISTS idx_entity_datestamp (entity, datestamp)",
-            "ALTER TABLE " . $table . " ADD INDEX IF NOT EXISTS idx_entity_user_datestamp (entity, userid, datestamp)"
-        );
-        
-        foreach ($indexes as $sql) {
-            // Use DDL that works on older MySQL too
-            $sql_compat = str_replace('ADD INDEX IF NOT EXISTS', 'ADD INDEX', $sql);
-            // Try adding, ignore error if already exists
-            @$this->db->query($sql_compat);
-        }
+        // Migration is now handled by the trigger's migrateLegacy() method
+        // which runs automatically on first trigger execution
+        // This keeps the module init clean and lightweight
+        return;
     }
 
     /** Disable module */

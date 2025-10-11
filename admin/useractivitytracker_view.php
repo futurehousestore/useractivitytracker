@@ -98,7 +98,7 @@ if ($activity->payload) {
 
 // Related activities (same user, similar timeframe)
 $related_sql = "SELECT rowid, datestamp, action, element_type, ref, severity 
-                FROM ".$db->prefix()."alt_user_activity 
+                FROM ".$db->prefix()."useractivitytracker_activity 
                 WHERE userid = ".(int)$activity->userid." 
                 AND entity = ".(int)$conf->entity."
                 AND rowid != ".(int)$activity->id."

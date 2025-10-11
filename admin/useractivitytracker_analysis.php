@@ -58,14 +58,14 @@ $cond = " WHERE entity=".(int)$conf->entity." AND datestamp BETWEEN '".$db->esca
 
 $topElements = array();
 $sql = "SELECT element_type, COUNT(*) as n, COUNT(DISTINCT userid) as unique_users 
-        FROM {$prefix}alt_user_activity {$cond} AND element_type IS NOT NULL 
+        FROM {$prefix}useractivitytracker_activity {$cond} AND element_type IS NOT NULL 
         GROUP BY element_type ORDER BY n DESC LIMIT 15";
 $res = $db->query($sql);
 if ($res) while ($o=$db->fetch_object($res)) $topElements[]=$o;
 
 $hourlyActivity = array();
 $sql = "SELECT HOUR(datestamp) as h, COUNT(*) as n 
-        FROM {$prefix}alt_user_activity {$cond} 
+        FROM {$prefix}useractivitytracker_activity {$cond} 
         GROUP BY HOUR(datestamp) ORDER BY h";
 $res = $db->query($sql);
 if ($res) while ($o=$db->fetch_object($res)) $hourlyActivity[(int)$o->h]=$o->n;
@@ -200,7 +200,7 @@ if ($stats['total'] == 0) {
     
     // 1. Check table existence
     if (!$diagnostics['table_exists']) {
-        $diagnostic_results[] = '❌ Database table <code>'.$db->prefix().'alt_user_activity</code> does not exist';
+        $diagnostic_results[] = '❌ Database table <code>'.$db->prefix().'useractivitytracker_activity</code> does not exist';
     } else {
         $diagnostic_results[] = '✅ Database table exists';
         
@@ -252,15 +252,15 @@ if ($stats['total'] == 0) {
         // 4. Test database write permissions (only if no recent activity)
         if ($diagnostics['recent_activity_count'] == 0) {
             try {
-                $test_sql = "INSERT INTO ".$db->prefix()."alt_user_activity 
-                            (datestamp, entity, action, userid, username, severity) 
+                $test_sql = "INSERT INTO ".$db->prefix()."useractivitytracker_activity 
+                            (datestamp, entity, action, fk_user, username, severity) 
                             VALUES (NOW(), ".(int)$conf->entity.", 'TEST_DIAGNOSTIC', ".(int)$user->id.", '".$db->escape($user->login)."', 'info')";
                 $test_res = $db->query($test_sql);
                 if ($test_res) {
                     // Clean up test record immediately
-                    $last_id = $db->last_insert_id($db->prefix()."alt_user_activity");
+                    $last_id = $db->last_insert_id($db->prefix()."useractivitytracker_activity");
                     if ($last_id) {
-                        $db->query("DELETE FROM ".$db->prefix()."alt_user_activity WHERE rowid = ".(int)$last_id);
+                        $db->query("DELETE FROM ".$db->prefix()."useractivitytracker_activity WHERE rowid = ".(int)$last_id);
                     }
                     $diagnostic_results[] = '✅ Database write permissions OK';
                 } else {

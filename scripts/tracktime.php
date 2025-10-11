@@ -20,7 +20,7 @@ $now = function_exists('dol_now') ? dol_now() : time();
 
 // Ensure correct table exists (and migrate old mistaken name if present)
 $tNew = $db->prefix().'useractivitytracker_log';
-$tOld = $db->prefix().'alt_user_activity';
+$tOld = $db->prefix().'useractivitytracker_activity';
 $resNew = $db->query("SHOW TABLES LIKE '".$db->escape($tNew)."'");
 if (!($resNew && $db->num_rows($resNew) > 0)) {
     $resOld = $db->query("SHOW TABLES LIKE '".$db->escape($tOld)."'");
