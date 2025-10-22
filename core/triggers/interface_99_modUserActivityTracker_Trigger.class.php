@@ -202,6 +202,7 @@ class InterfaceUserActivityTrackerTrigger extends DolibarrTriggers
         if ($res <= 0) return; // Old table doesn't exist, nothing to migrate
         
         // Build column intersection to safely migrate
+        $db->DDLDescTable($old);
         $colsOld = array_map('strtolower', array_keys($db->database_specific_columns ?? array()));
         $db->DDLDescTable($new);
         $colsNew = array_map('strtolower', array_keys($db->database_specific_columns ?? array()));
